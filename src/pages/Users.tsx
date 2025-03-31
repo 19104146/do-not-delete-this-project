@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Users } from 'lucide-react';
+import { Users as UsersIcon } from 'lucide-react';
 
 const Users = () => {
   return (
     <div className="container mx-auto py-8">
       <div className="flex items-center mb-6">
-        <Users className="h-8 w-8 mr-3 text-primary" />
+        <UsersIcon className="h-8 w-8 mr-3 text-primary" />
         <h1 className="text-2xl font-bold">Users Management</h1>
       </div>
       
