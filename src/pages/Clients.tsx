@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { PlusCircle, Filter, Grid3X3, List, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus } from 'lucide-react';
+import { PlusCircle, Filter, Grid3X3, List, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Client, Group } from '@/types/clientTypes';
@@ -24,6 +23,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -35,8 +35,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 import { toast } from 'sonner';
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatusIndicator } from '@/components/ui/StatusIndicator';
 
 const ClientsContent = () => {
   const { 
@@ -61,6 +72,11 @@ const ClientsContent = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [activeTab, setActiveTab] = useState('clients');
+  const [sortField, setSortField] = useState<'name' | 'status' | 'lastSeen'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Form states
   const [clientFormOpen, setClientFormOpen] = useState(false);
@@ -76,16 +92,56 @@ const ClientsContent = () => {
   const [targetClientId, setTargetClientId] = useState<string | undefined>();
   const [addToGroupId, setAddToGroupId] = useState<string | undefined>();
   
+  // Handle sorting
+  const handleSort = (field: 'name' | 'status' | 'lastSeen') => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+  
+  // Sort clients based on sort field and direction
+  const sortedClients = [...clients].sort((a, b) => {
+    if (sortField === 'name') {
+      return sortDirection === 'asc' 
+        ? a.name.localeCompare(b.name) 
+        : b.name.localeCompare(a.name);
+    } else if (sortField === 'status') {
+      return sortDirection === 'asc' 
+        ? a.status.localeCompare(b.status) 
+        : b.status.localeCompare(a.status);
+    } else if (sortField === 'lastSeen') {
+      const dateA = new Date(a.lastSeen).getTime();
+      const dateB = new Date(b.lastSeen).getTime();
+      return sortDirection === 'asc' 
+        ? dateA - dateB 
+        : dateB - dateA;
+    }
+    return 0;
+  });
+  
   // Filter clients based on search query
+  const filteredClients = sortedClients.filter(client => 
+    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.ip.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  // Pagination
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const paginatedClients = filteredClients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  
+  // Filter groups based on search query
   const filteredGroups = groups.filter(group => 
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  const filteredUngroupedClients = getUngroupedClients().filter(client => 
-    client.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredClients = clients.filter(client => 
+    const filteredUngroupedClients = getUngroupedClients().filter(client => 
     client.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -148,6 +204,7 @@ const ClientsContent = () => {
   };
   
   const confirmBulkDeleteClients = () => {
+    setIsLoading(true);
     // Delete selected clients
     for (const clientId of selectedClients) {
       deleteClient(clientId);
@@ -156,7 +213,11 @@ const ClientsContent = () => {
     setBulkDeleteDialogOpen(false);
     clearAllSelections();
     
-    toast.success(`Deleted ${selectedClients.length} clients`);
+    // Simulate loading
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success(`Deleted ${selectedClients.length} clients`);
+    }, 500);
   };
 
   // Handle bulk delete for groups
@@ -165,6 +226,7 @@ const ClientsContent = () => {
   };
   
   const confirmBulkDeleteGroups = () => {
+    setIsLoading(true);
     // Delete selected groups
     for (const groupId of selectedGroups) {
       deleteGroup(groupId);
@@ -173,7 +235,11 @@ const ClientsContent = () => {
     setBulkDeleteGroupsDialogOpen(false);
     clearAllSelections();
     
-    toast.success(`Deleted ${selectedGroups.length} groups`);
+    // Simulate loading
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success(`Deleted ${selectedGroups.length} groups`);
+    }, 500);
   };
   
   // Get total counts
@@ -182,24 +248,34 @@ const ClientsContent = () => {
   const selectedClientsCount = selectedClients.length;
   const selectedGroupsCount = selectedGroups.length;
   
+  // Format date string
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+  
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Clients</h1>
-        <div className="flex gap-2">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Clients Management</h1>
+          <p className="text-muted-foreground">View and manage your digital signage clients</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
           {activeTab === 'clients' && selectedClientsCount > 0 && (
             <>
-              <Button variant="outline" onClick={clearAllSelections}>
+              <Button variant="outline" onClick={clearAllSelections} size="sm">
                 <SquareSlash size={16} className="mr-2" />
-                Clear selection ({selectedClientsCount})
+                Clear ({selectedClientsCount})
               </Button>
               
-              <Button variant="outline" onClick={() => handleSendAnnouncement()}>
+              <Button variant="outline" onClick={() => handleSendAnnouncement()} size="sm">
                 <BellRing size={16} className="mr-2" />
                 Announce
               </Button>
               
-              <Button variant="outline" className="text-destructive" onClick={handleBulkDeleteClients}>
+              <Button variant="outline" className="text-destructive" onClick={handleBulkDeleteClients} size="sm">
                 <Trash2 size={16} className="mr-2" />
                 Delete
               </Button>
@@ -208,17 +284,17 @@ const ClientsContent = () => {
 
           {activeTab === 'groups' && selectedGroupsCount > 0 && (
             <>
-              <Button variant="outline" onClick={clearAllSelections}>
+              <Button variant="outline" onClick={clearAllSelections} size="sm">
                 <SquareSlash size={16} className="mr-2" />
-                Clear selection ({selectedGroupsCount})
+                Clear ({selectedGroupsCount})
               </Button>
               
-              <Button variant="outline" onClick={() => handleSendAnnouncement()}>
+              <Button variant="outline" onClick={() => handleSendAnnouncement()} size="sm">
                 <BellRing size={16} className="mr-2" />
                 Announce
               </Button>
               
-              <Button variant="outline" className="text-destructive" onClick={handleBulkDeleteGroups}>
+              <Button variant="outline" className="text-destructive" onClick={handleBulkDeleteGroups} size="sm">
                 <Trash2 size={16} className="mr-2" />
                 Delete
               </Button>
@@ -241,176 +317,334 @@ const ClientsContent = () => {
         </div>
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-          <Input 
-            type="search" 
-            placeholder="Search clients and groups..." 
-            className="pl-10 w-full"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center">
-                <Filter size={16} className="mr-2" />
-                Filter
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel>Filter Clients</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-xs font-normal text-gray-500">Status</DropdownMenuLabel>
-                <DropdownMenuItem>Connected</DropdownMenuItem>
-                <DropdownMenuItem>Warning</DropdownMenuItem>
-                <DropdownMenuItem>Error</DropdownMenuItem>
-                <DropdownMenuItem>Inactive</DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-xs font-normal text-gray-500">Groups</DropdownMenuLabel>
-                {groups.map(group => (
-                  <DropdownMenuItem key={group.id}>{group.name}</DropdownMenuItem>
-                ))}
-                <DropdownMenuItem>Ungrouped</DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <div className="flex rounded-md border overflow-hidden">
-            <Button
-              variant={viewMode === 'grid' ? "default" : "outline"}
-              className="rounded-none border-0 px-3"
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid3X3 size={18} />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? "default" : "outline"}
-              className="rounded-none border-0 px-3"
-              onClick={() => setViewMode('list')}
-            >
-              <List size={18} />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <Tabs 
-        defaultValue="clients" 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="w-full mb-6"
-      >
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="clients">All Clients ({totalClients})</TabsTrigger>
-          <TabsTrigger value="groups">All Groups ({totalGroups})</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="clients" className="space-y-4">
-          {selectedClientsCount === 0 && (
-            <div className="flex gap-2 items-center mb-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-primary"
-                onClick={selectAllClients}
-              >
-                <CheckSquare size={16} className="mr-1" />
-                Select all
-              </Button>
-              
-              <div className="text-sm text-muted-foreground">
-                {selectedClientsCount} of {totalClients} clients selected
-              </div>
-            </div>
-          )}
-          
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">Select</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Group</TableHead>
-                  <TableHead>Last Seen</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClients.length > 0 ? (
-                  filteredClients.map((client) => (
-                    <ClientListItem
-                      key={client.id}
-                      client={client}
-                      onEdit={handleEditClient}
-                      onSendAnnouncement={(clientId) => handleSendAnnouncement(undefined, clientId)}
-                    />
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      {searchQuery ? (
-                        <>No clients found matching "{searchQuery}"</>
-                      ) : (
-                        <>No clients yet. Add a client to get started.</>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="groups" className="space-y-4">
-          {selectedGroupsCount === 0 && groups.length > 0 && (
-            <div className="flex gap-2 items-center mb-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-primary"
-                onClick={() => groups.forEach(group => selectGroup(group.id, true))}
-              >
-                <CheckSquare size={16} className="mr-1" />
-                Select all groups
-              </Button>
-              
-              <div className="text-sm text-muted-foreground">
-                {selectedGroupsCount} of {totalGroups} groups selected
-              </div>
-            </div>
-          )}
-          
-          {filteredGroups.length > 0 ? (
-            filteredGroups.map(group => (
-              <GroupSection
-                key={group.id}
-                group={group}
-                clients={getClientsInGroup(group.id)}
-                onEditGroup={handleEditGroup}
-                onEditClient={handleEditClient}
-                onSendAnnouncement={handleSendAnnouncement}
-                onAddClient={handleAddClientToGroup}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <Input 
+                type="search" 
+                placeholder="Search clients and groups..." 
+                className="pl-10 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-            ))
-          ) : (
-            <div className="text-center py-8 text-muted-foreground border rounded-md">
-              {searchQuery ? (
-                <>No groups found matching "{searchQuery}"</>
-              ) : (
-                <>No groups yet. Create a group to organize your clients.</>
-              )}
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            
+            <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center">
+                    <SlidersHorizontal size={16} className="mr-2" />
+                    Filter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuLabel>Filter Clients</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-xs font-normal text-gray-500">Status</DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem checked>Connected</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked>Warning</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked>Error</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem checked>Inactive</DropdownMenuCheckboxItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-xs font-normal text-gray-500">Groups</DropdownMenuLabel>
+                    {groups.map(group => (
+                      <DropdownMenuCheckboxItem key={group.id} checked>{group.name}</DropdownMenuCheckboxItem>
+                    ))}
+                    <DropdownMenuCheckboxItem checked>Ungrouped</DropdownMenuCheckboxItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <div className="flex rounded-md border overflow-hidden">
+                <Button
+                  variant={viewMode === 'grid' ? "default" : "outline"}
+                  className="rounded-none border-0 px-3"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid3X3 size={18} />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? "default" : "outline"}
+                  className="rounded-none border-0 px-3"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List size={18} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          <Tabs 
+            defaultValue="clients" 
+            value={activeTab} 
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="clients">All Clients ({totalClients})</TabsTrigger>
+              <TabsTrigger value="groups">All Groups ({totalGroups})</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="clients" className="space-y-4">
+              {selectedClientsCount === 0 && (
+                <div className="flex gap-2 items-center mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-primary"
+                    onClick={selectAllClients}
+                  >
+                    <CheckSquare size={16} className="mr-1" />
+                    Select all
+                  </Button>
+                  
+                  <div className="text-sm text-muted-foreground">
+                    {selectedClientsCount} of {totalClients} clients selected
+                  </div>
+                </div>
+              )}
+              
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">Select</TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleSort('name')} 
+                          className="flex items-center p-0 h-auto font-medium"
+                        >
+                          Name
+                          <ArrowUpDown size={14} className="ml-1" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleSort('status')} 
+                          className="flex items-center p-0 h-auto font-medium"
+                        >
+                          Status
+                          <ArrowUpDown size={14} className="ml-1" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>Group</TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleSort('lastSeen')} 
+                          className="flex items-center p-0 h-auto font-medium"
+                        >
+                          Last Seen
+                          <ArrowUpDown size={14} className="ml-1" />
+                        </Button>
+                      </TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <div className="flex items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                            <p>Loading clients...</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : paginatedClients.length > 0 ? (
+                      paginatedClients.map((client) => (
+                        <TableRow key={client.id} className="hover:bg-muted/30">
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                              checked={selectedClients.includes(client.id)}
+                              onChange={(e) => selectAllClients(client.id, e.target.checked)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{client.name}</div>
+                            <div className="text-xs text-muted-foreground">{client.ip}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">{client.location || 'N/A'}</div>
+                            <div className="text-xs text-muted-foreground">{client.contact || 'No contact'}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <StatusIndicator status={client.status} />
+                              <span className="capitalize">{client.status}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {client.groupId ? (
+                              <Badge variant="outline" className="capitalize">
+                                {groups.find(g => g.id === client.groupId)?.name || 'Unknown'}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-gray-100">Ungrouped</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">{formatDate(client.lastSeen)}</div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleEditClient(client)}>
+                                Edit
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleSendAnnouncement(undefined, client.id)}>
+                                Announce
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          {searchQuery ? (
+                            <>No clients found matching "{searchQuery}"</>
+                          ) : (
+                            <>No clients yet. Add a client to get started.</>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {filteredClients.length > itemsPerPage && (
+                <Pagination className="mt-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: Math.min(totalPages, 5) }).map((_, idx) => {
+                      const pageNum = idx + 1;
+                      return (
+                        <PaginationItem key={idx}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(pageNum)}
+                            isActive={currentPage === pageNum}
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    
+                    {totalPages > 5 && (
+                      <>
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                        <PaginationItem>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(totalPages)}
+                            isActive={currentPage === totalPages}
+                          >
+                            {totalPages}
+                          </PaginationLink>
+                        </PaginationItem>
+                      </>
+                    )}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+              
+              <div className="flex items-center justify-between text-sm text-muted-foreground mt-2">
+                <div>
+                  Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredClients.length)} to {Math.min(currentPage * itemsPerPage, filteredClients.length)} of {filteredClients.length} clients
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>Items per page:</span>
+                  <select 
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border rounded px-2 py-1"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="groups" className="space-y-4">
+              {selectedGroupsCount === 0 && groups.length > 0 && (
+                <div className="flex gap-2 items-center mb-4">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-primary"
+                    onClick={() => groups.forEach(group => selectGroup(group.id, true))}
+                  >
+                    <CheckSquare size={16} className="mr-1" />
+                    Select all groups
+                  </Button>
+                  
+                  <div className="text-sm text-muted-foreground">
+                    {selectedGroupsCount} of {totalGroups} groups selected
+                  </div>
+                </div>
+              )}
+              
+              {filteredGroups.length > 0 ? (
+                filteredGroups.map(group => (
+                  <GroupSection
+                    key={group.id}
+                    group={group}
+                    clients={getClientsInGroup(group.id)}
+                    onEditGroup={handleEditGroup}
+                    onEditClient={handleEditClient}
+                    onSendAnnouncement={handleSendAnnouncement}
+                    onAddClient={handleAddClientToGroup}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground border rounded-md">
+                  {searchQuery ? (
+                    <>No groups found matching "{searchQuery}"</>
+                  ) : (
+                    <>No groups yet. Create a group to organize your clients.</>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
       
       {/* Dialogs */}
       <ClientForm 
