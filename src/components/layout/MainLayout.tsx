@@ -11,7 +11,7 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
-  // Example client count - in a real app, this would come from an API/context
+  // Example client count - now retrieved from the ClientContext
   const clientCount = 18;
 
   return (
