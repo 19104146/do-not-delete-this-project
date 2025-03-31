@@ -78,21 +78,18 @@ const ClientsContent = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Form states
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [groupFormOpen, setGroupFormOpen] = useState(false);
   const [announcementFormOpen, setAnnouncementFormOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [bulkDeleteGroupsDialogOpen, setBulkDeleteGroupsDialogOpen] = useState(false);
   
-  // Edit states
   const [editingClient, setEditingClient] = useState<Client | undefined>();
   const [editingGroup, setEditingGroup] = useState<Group | undefined>();
   const [targetGroupId, setTargetGroupId] = useState<string | undefined>();
   const [targetClientId, setTargetClientId] = useState<string | undefined>();
   const [addToGroupId, setAddToGroupId] = useState<string | undefined>();
   
-  // Handle sorting
   const handleSort = (field: 'name' | 'status' | 'lastSeen') => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -102,7 +99,6 @@ const ClientsContent = () => {
     }
   };
   
-  // Sort clients based on sort field and direction
   const sortedClients = [...clients].sort((a, b) => {
     if (sortField === 'name') {
       return sortDirection === 'asc' 
@@ -122,30 +118,26 @@ const ClientsContent = () => {
     return 0;
   });
   
-  // Filter clients based on search query
   const filteredClients = sortedClients.filter(client => 
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.ip.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (client.ip ? client.ip.toLowerCase().includes(searchQuery.toLowerCase()) : false) ||
     client.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Pagination
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
   const paginatedClients = filteredClients.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
   
-  // Filter groups based on search query
   const filteredGroups = groups.filter(group => 
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-    const filteredUngroupedClients = getUngroupedClients().filter(client => 
+  const filteredUngroupedClients = getUngroupedClients().filter(client => 
     client.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Handle adding/editing clients
   const handleAddClient = () => {
     setEditingClient(undefined);
     setAddToGroupId(undefined);
@@ -165,7 +157,6 @@ const ClientsContent = () => {
     }
   };
   
-  // Handle adding/editing groups
   const handleAddGroup = () => {
     setEditingGroup(undefined);
     setGroupFormOpen(true);
@@ -184,28 +175,24 @@ const ClientsContent = () => {
     }
   };
   
-  // Handle adding client to specific group
   const handleAddClientToGroup = (groupId: string) => {
     setAddToGroupId(groupId);
     setEditingClient(undefined);
     setClientFormOpen(true);
   };
   
-  // Handle sending announcements
   const handleSendAnnouncement = (groupId?: string, clientId?: string) => {
     setTargetGroupId(groupId);
     setTargetClientId(clientId);
     setAnnouncementFormOpen(true);
   };
   
-  // Handle bulk delete for clients
   const handleBulkDeleteClients = () => {
     setBulkDeleteDialogOpen(true);
   };
   
   const confirmBulkDeleteClients = () => {
     setIsLoading(true);
-    // Delete selected clients
     for (const clientId of selectedClients) {
       deleteClient(clientId);
     }
@@ -213,21 +200,18 @@ const ClientsContent = () => {
     setBulkDeleteDialogOpen(false);
     clearAllSelections();
     
-    // Simulate loading
     setTimeout(() => {
       setIsLoading(false);
       toast.success(`Deleted ${selectedClients.length} clients`);
     }, 500);
   };
 
-  // Handle bulk delete for groups
   const handleBulkDeleteGroups = () => {
     setBulkDeleteGroupsDialogOpen(true);
   };
   
   const confirmBulkDeleteGroups = () => {
     setIsLoading(true);
-    // Delete selected groups
     for (const groupId of selectedGroups) {
       deleteGroup(groupId);
     }
@@ -235,20 +219,17 @@ const ClientsContent = () => {
     setBulkDeleteGroupsDialogOpen(false);
     clearAllSelections();
     
-    // Simulate loading
     setTimeout(() => {
       setIsLoading(false);
       toast.success(`Deleted ${selectedGroups.length} groups`);
     }, 500);
   };
   
-  // Get total counts
   const totalClients = clients.length;
   const totalGroups = groups.length;
   const selectedClientsCount = selectedClients.length;
   const selectedGroupsCount = selectedGroups.length;
   
-  // Format date string
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString();
@@ -472,12 +453,12 @@ const ClientsContent = () => {
                               type="checkbox"
                               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                               checked={selectedClients.includes(client.id)}
-                              onChange={(e) => selectAllClients(client.id, e.target.checked)}
+                              onChange={(e) => selectClient(client.id, e.target.checked)}
                             />
                           </TableCell>
                           <TableCell>
                             <div className="font-medium">{client.name}</div>
-                            <div className="text-xs text-muted-foreground">{client.ip}</div>
+                            <div className="text-xs text-muted-foreground">{client.ip || 'No IP'}</div>
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">{client.location || 'N/A'}</div>
@@ -646,7 +627,6 @@ const ClientsContent = () => {
         </CardContent>
       </Card>
       
-      {/* Dialogs */}
       <ClientForm 
         client={editingClient}
         groupId={addToGroupId}

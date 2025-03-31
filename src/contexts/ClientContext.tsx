@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Client, Group, ClientStatus } from '@/types/clientTypes';
 import { toast } from 'sonner';
@@ -44,24 +43,24 @@ const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 // Mock data
 const initialClients: Client[] = [
-  { id: '1', name: 'LB467-1', status: 'connected', lastSeen: new Date(), groupId: '1' },
-  { id: '2', name: 'LB467-2', status: 'connected', lastSeen: new Date(), groupId: '1' },
-  { id: '3', name: 'LB467-3', status: 'error', lastSeen: new Date(Date.now() - 600000), groupId: '1' },
-  { id: '4', name: 'LB467-4', status: 'connected', lastSeen: new Date(), groupId: '1' },
-  { id: '5', name: 'LB467-5', status: 'warning', lastSeen: new Date(), groupId: '1' },
-  { id: '6', name: 'LB467-6', status: 'connected', lastSeen: new Date(), groupId: '2' },
-  { id: '7', name: 'LB467-7', status: 'connected', lastSeen: new Date(), groupId: '2' },
-  { id: '8', name: 'LB467-8', status: 'warning', lastSeen: new Date(Date.now() - 300000), groupId: '2' },
-  { id: '9', name: 'LB467-9', status: 'connected', lastSeen: new Date(), groupId: '2' },
-  { id: '10', name: 'LB467-10', status: 'connected', lastSeen: new Date(), groupId: '2' },
-  { id: '11', name: 'LB467-11', status: 'connected', lastSeen: new Date(), groupId: '3' },
-  { id: '12', name: 'LB467-12', status: 'connected', lastSeen: new Date(), groupId: '3' },
-  { id: '13', name: 'ComputerLab01', status: 'inactive', lastSeen: new Date(Date.now() - 86400000), groupId: '3' },
-  { id: '14', name: 'LB467-14', status: 'connected', lastSeen: new Date(), groupId: '3' },
-  { id: '15', name: 'LB467-15', status: 'connected', lastSeen: new Date(), groupId: '3' },
-  { id: '16', name: '12345678901', status: 'connected', lastSeen: new Date() },
-  { id: '17', name: 'ABCDEF', status: 'warning', lastSeen: new Date(Date.now() - 3600000) },
-  { id: '18', name: 'GHIJKL', status: 'error', lastSeen: new Date(Date.now() - 7200000) },
+  { id: '1', name: 'LB467-1', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.101', location: 'Building A', contact: 'John Doe', groupId: '1' },
+  { id: '2', name: 'LB467-2', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.102', location: 'Building A', contact: 'Jane Smith', groupId: '1' },
+  { id: '3', name: 'LB467-3', status: 'error', lastSeen: new Date(Date.now() - 600000).toISOString(), ip: '192.168.1.103', location: 'Building A', groupId: '1' },
+  { id: '4', name: 'LB467-4', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.104', location: 'Building B', contact: 'Robert Brown', groupId: '1' },
+  { id: '5', name: 'LB467-5', status: 'warning', lastSeen: new Date().toISOString(), ip: '192.168.1.105', location: 'Building B', groupId: '1' },
+  { id: '6', name: 'LB467-6', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.106', location: 'Building C', contact: 'Sarah Lee', groupId: '2' },
+  { id: '7', name: 'LB467-7', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.107', location: 'Building C', groupId: '2' },
+  { id: '8', name: 'LB467-8', status: 'warning', lastSeen: new Date(Date.now() - 300000).toISOString(), ip: '192.168.1.108', location: 'Building C', groupId: '2' },
+  { id: '9', name: 'LB467-9', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.109', location: 'Building D', contact: 'Thomas Wilson', groupId: '2' },
+  { id: '10', name: 'LB467-10', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.110', location: 'Building D', groupId: '2' },
+  { id: '11', name: 'LB467-11', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.111', location: 'Building E', contact: 'Emily Clark', groupId: '3' },
+  { id: '12', name: 'LB467-12', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.112', location: 'Building E', groupId: '3' },
+  { id: '13', name: 'ComputerLab01', status: 'inactive', lastSeen: new Date(Date.now() - 86400000).toISOString(), ip: '192.168.1.113', location: 'Lab Building', groupId: '3' },
+  { id: '14', name: 'LB467-14', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.114', location: 'Building E', groupId: '3' },
+  { id: '15', name: 'LB467-15', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.115', location: 'Building F', contact: 'Michael Davis', groupId: '3' },
+  { id: '16', name: '12345678901', status: 'connected', lastSeen: new Date().toISOString(), ip: '192.168.1.116', location: 'Building F' },
+  { id: '17', name: 'ABCDEF', status: 'warning', lastSeen: new Date(Date.now() - 3600000).toISOString(), ip: '192.168.1.117' },
+  { id: '18', name: 'GHIJKL', status: 'error', lastSeen: new Date(Date.now() - 7200000).toISOString(), ip: '192.168.1.118' },
 ];
 
 const initialGroups: Group[] = [
@@ -76,7 +75,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
 
-  // Initialize group clients
   useEffect(() => {
     const updatedGroups = groups.map(group => {
       return {
@@ -87,18 +85,16 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setGroups(updatedGroups);
   }, []);
 
-  // Client operations
   const addClient = (client: Omit<Client, 'id' | 'lastSeen'>) => {
     const newClient: Client = {
       ...client,
       id: Date.now().toString(),
-      lastSeen: new Date(),
+      lastSeen: new Date().toISOString(),
     };
 
     setClients(prev => [...prev, newClient]);
     toast.success(`Client "${newClient.name}" added successfully`);
     
-    // Add to group if groupId is specified
     if (newClient.groupId) {
       setGroups(prev => prev.map(group => 
         group.id === newClient.groupId 
@@ -115,7 +111,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       )
     );
     
-    // Update in groups too
     setGroups(prev => 
       prev.map(group => ({
         ...group,
@@ -134,7 +129,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     
     setClients(prev => prev.filter(client => client.id !== id));
     
-    // Remove from groups
     setGroups(prev => 
       prev.map(group => ({
         ...group,
@@ -142,7 +136,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }))
     );
     
-    // Remove from selections
     setSelectedClients(prev => prev.filter(clientId => clientId !== id));
     
     toast.success(`Client "${clientToDelete.name}" deleted successfully`);
@@ -162,7 +155,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     );
   };
 
-  // Group operations
   const addGroup = (group: Omit<Group, 'id' | 'clients'>) => {
     const newGroup: Group = {
       ...group,
@@ -188,17 +180,14 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const groupToDelete = groups.find(g => g.id === id);
     if (!groupToDelete) return;
     
-    // Unassign clients from this group
     setClients(prev => 
       prev.map(client => 
         client.groupId === id ? { ...client, groupId: undefined } : client
       )
     );
     
-    // Remove group
     setGroups(prev => prev.filter(group => group.id !== id));
     
-    // Remove from selections
     setSelectedGroups(prev => prev.filter(groupId => groupId !== id));
     
     toast.success(`Group "${groupToDelete.name}" deleted successfully`);
@@ -219,14 +208,12 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const addClientToGroup = (clientId: string, groupId: string) => {
-    // Update client's groupId
     setClients(prev => 
       prev.map(client => 
         client.id === clientId ? { ...client, groupId } : client
       )
     );
     
-    // Add client to group's clients array
     const client = clients.find(c => c.id === clientId);
     if (!client) return;
     
@@ -242,14 +229,12 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const removeClientFromGroup = (clientId: string, groupId: string) => {
-    // Remove groupId from client
     setClients(prev => 
       prev.map(client => 
         client.id === clientId ? { ...client, groupId: undefined } : client
       )
     );
     
-    // Remove client from group's clients array
     setGroups(prev => 
       prev.map(group => 
         group.id === groupId 
@@ -261,7 +246,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     toast.success(`Client removed from group successfully`);
   };
 
-  // Selection operations
   const clearAllSelections = () => {
     setSelectedClients([]);
     setSelectedGroups([]);
@@ -298,7 +282,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     );
   };
 
-  // Filtering
   const filterClients = (query: string) => {
     if (!query) return clients;
     
@@ -318,7 +301,6 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     );
   };
 
-  // Get operations
   const getClient = (id: string) => {
     return clients.find(client => client.id === id);
   };

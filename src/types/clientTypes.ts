@@ -5,9 +5,12 @@ export interface Client {
   id: string;
   name: string;
   status: ClientStatus;
-  lastSeen: Date;
+  lastSeen: string;
   groupId?: string;
   selected?: boolean;
+  ip?: string;
+  location?: string;
+  contact?: string;
 }
 
 export interface Group {
