@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { PlusCircle, Filter, Grid3X3, List, Search, BellRing, Trash2, CheckSquare, SquareSlash } from 'lucide-react';
+import { PlusCircle, Filter, Grid3X3, List, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Client, Group } from '@/types/clientTypes';
@@ -10,6 +10,12 @@ import { ClientForm } from '@/components/clients/ClientForm';
 import { GroupForm } from '@/components/clients/GroupForm';
 import { AnnouncementForm } from '@/components/clients/AnnouncementForm';
 import { ClientProvider, useClients } from '@/contexts/ClientContext';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from 'sonner';
 
 const ClientsContent = () => {
@@ -45,17 +52,22 @@ const ClientsContent = () => {
     clearAllSelections,
     selectAllClients,
     getUngroupedClients,
-    deleteClient
+    deleteClient,
+    deleteGroup,
+    selectGroup,
+    selectAllInGroup
   } = useClients();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [activeTab, setActiveTab] = useState('clients');
   
   // Form states
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [groupFormOpen, setGroupFormOpen] = useState(false);
   const [announcementFormOpen, setAnnouncementFormOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkDeleteGroupsDialogOpen, setBulkDeleteGroupsDialogOpen] = useState(false);
   
   // Edit states
   const [editingClient, setEditingClient] = useState<Client | undefined>();
@@ -70,6 +82,10 @@ const ClientsContent = () => {
   );
   
   const filteredUngroupedClients = getUngroupedClients().filter(client => 
+    client.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -126,12 +142,12 @@ const ClientsContent = () => {
     setAnnouncementFormOpen(true);
   };
   
-  // Handle bulk delete
-  const handleBulkDelete = () => {
+  // Handle bulk delete for clients
+  const handleBulkDeleteClients = () => {
     setBulkDeleteDialogOpen(true);
   };
   
-  const confirmBulkDelete = () => {
+  const confirmBulkDeleteClients = () => {
     // Delete selected clients
     for (const clientId of selectedClients) {
       deleteClient(clientId);
@@ -142,21 +158,40 @@ const ClientsContent = () => {
     
     toast.success(`Deleted ${selectedClients.length} clients`);
   };
+
+  // Handle bulk delete for groups
+  const handleBulkDeleteGroups = () => {
+    setBulkDeleteGroupsDialogOpen(true);
+  };
+  
+  const confirmBulkDeleteGroups = () => {
+    // Delete selected groups
+    for (const groupId of selectedGroups) {
+      deleteGroup(groupId);
+    }
+    
+    setBulkDeleteGroupsDialogOpen(false);
+    clearAllSelections();
+    
+    toast.success(`Deleted ${selectedGroups.length} groups`);
+  };
   
   // Get total counts
   const totalClients = clients.length;
-  const selectedCount = selectedClients.length + selectedGroups.length;
+  const totalGroups = groups.length;
+  const selectedClientsCount = selectedClients.length;
+  const selectedGroupsCount = selectedGroups.length;
   
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Clients</h1>
         <div className="flex gap-2">
-          {selectedCount > 0 && (
+          {activeTab === 'clients' && selectedClientsCount > 0 && (
             <>
               <Button variant="outline" onClick={clearAllSelections}>
                 <SquareSlash size={16} className="mr-2" />
-                Clear selection ({selectedCount})
+                Clear selection ({selectedClientsCount})
               </Button>
               
               <Button variant="outline" onClick={() => handleSendAnnouncement()}>
@@ -164,19 +199,45 @@ const ClientsContent = () => {
                 Announce
               </Button>
               
-              {selectedClients.length > 0 && (
-                <Button variant="outline" className="text-destructive" onClick={handleBulkDelete}>
-                  <Trash2 size={16} className="mr-2" />
-                  Delete
-                </Button>
-              )}
+              <Button variant="outline" className="text-destructive" onClick={handleBulkDeleteClients}>
+                <Trash2 size={16} className="mr-2" />
+                Delete
+              </Button>
+            </>
+          )}
+
+          {activeTab === 'groups' && selectedGroupsCount > 0 && (
+            <>
+              <Button variant="outline" onClick={clearAllSelections}>
+                <SquareSlash size={16} className="mr-2" />
+                Clear selection ({selectedGroupsCount})
+              </Button>
+              
+              <Button variant="outline" onClick={() => handleSendAnnouncement()}>
+                <BellRing size={16} className="mr-2" />
+                Announce
+              </Button>
+              
+              <Button variant="outline" className="text-destructive" onClick={handleBulkDeleteGroups}>
+                <Trash2 size={16} className="mr-2" />
+                Delete
+              </Button>
             </>
           )}
           
-          <Button onClick={handleAddClient}>
-            <PlusCircle size={16} className="mr-2" />
-            Add Client
-          </Button>
+          {activeTab === 'clients' && (
+            <Button onClick={handleAddClient}>
+              <PlusCircle size={16} className="mr-2" />
+              Add Client
+            </Button>
+          )}
+
+          {activeTab === 'groups' && (
+            <Button onClick={handleAddGroup}>
+              <UserPlus size={16} className="mr-2" />
+              Add Group
+            </Button>
+          )}
         </div>
       </div>
       
@@ -239,72 +300,117 @@ const ClientsContent = () => {
           </div>
         </div>
       </div>
-      
-      <div className="flex gap-2 items-center mb-4">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="text-primary"
-          onClick={selectAllClients}
-        >
-          <CheckSquare size={16} className="mr-1" />
-          Select all
-        </Button>
+
+      <Tabs 
+        defaultValue="clients" 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="w-full mb-6"
+      >
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="clients">All Clients ({totalClients})</TabsTrigger>
+          <TabsTrigger value="groups">All Groups ({totalGroups})</TabsTrigger>
+        </TabsList>
         
-        <div className="text-sm text-muted-foreground">
-          {selectedClients.length} of {totalClients} clients selected
-        </div>
-      </div>
-      
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Groups</h2>
-          <Button variant="outline" size="sm" onClick={handleAddGroup}>
-            <PlusCircle size={14} className="mr-1" />
-            Add Group
-          </Button>
-        </div>
-        
-        {filteredGroups.length > 0 ? (
-          filteredGroups.map(group => (
-            <GroupSection
-              key={group.id}
-              group={group}
-              clients={getClientsInGroup(group.id)}
-              onEditGroup={handleEditGroup}
-              onEditClient={handleEditClient}
-              onSendAnnouncement={handleSendAnnouncement}
-              onAddClient={handleAddClientToGroup}
-            />
-          ))
-        ) : (
-          searchQuery ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No groups found matching "{searchQuery}"
+        <TabsContent value="clients" className="space-y-4">
+          {selectedClientsCount === 0 && (
+            <div className="flex gap-2 items-center mb-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary"
+                onClick={selectAllClients}
+              >
+                <CheckSquare size={16} className="mr-1" />
+                Select all
+              </Button>
+              
+              <div className="text-sm text-muted-foreground">
+                {selectedClientsCount} of {totalClients} clients selected
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No groups yet. Create a group to organize your clients.
-            </div>
-          )
-        )}
-      </div>
-      
-      {filteredUngroupedClients.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-4">Ungrouped Clients</h2>
-          <div className="space-y-3">
-            {filteredUngroupedClients.map(client => (
-              <ClientListItem
-                key={client.id}
-                client={client}
-                onEdit={handleEditClient}
-                onSendAnnouncement={(clientId) => handleSendAnnouncement(undefined, clientId)}
-              />
-            ))}
+          )}
+          
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]">Select</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Group</TableHead>
+                  <TableHead>Last Seen</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredClients.length > 0 ? (
+                  filteredClients.map((client) => (
+                    <ClientListItem
+                      key={client.id}
+                      client={client}
+                      onEdit={handleEditClient}
+                      onSendAnnouncement={(clientId) => handleSendAnnouncement(undefined, clientId)}
+                    />
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {searchQuery ? (
+                        <>No clients found matching "{searchQuery}"</>
+                      ) : (
+                        <>No clients yet. Add a client to get started.</>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      )}
+        </TabsContent>
+        
+        <TabsContent value="groups" className="space-y-4">
+          {selectedGroupsCount === 0 && groups.length > 0 && (
+            <div className="flex gap-2 items-center mb-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary"
+                onClick={() => groups.forEach(group => selectGroup(group.id, true))}
+              >
+                <CheckSquare size={16} className="mr-1" />
+                Select all groups
+              </Button>
+              
+              <div className="text-sm text-muted-foreground">
+                {selectedGroupsCount} of {totalGroups} groups selected
+              </div>
+            </div>
+          )}
+          
+          {filteredGroups.length > 0 ? (
+            filteredGroups.map(group => (
+              <GroupSection
+                key={group.id}
+                group={group}
+                clients={getClientsInGroup(group.id)}
+                onEditGroup={handleEditGroup}
+                onEditClient={handleEditClient}
+                onSendAnnouncement={handleSendAnnouncement}
+                onAddClient={handleAddClientToGroup}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground border rounded-md">
+              {searchQuery ? (
+                <>No groups found matching "{searchQuery}"</>
+              ) : (
+                <>No groups yet. Create a group to organize your clients.</>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
       
       {/* Dialogs */}
       <ClientForm 
@@ -334,12 +440,30 @@ const ClientsContent = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete selected clients?</AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to delete {selectedClients.length} clients. This action cannot be undone.
+              You are about to delete {selectedClientsCount} clients. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction onClick={confirmBulkDeleteClients} className="bg-destructive text-destructive-foreground">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteGroupsDialogOpen} onOpenChange={setBulkDeleteGroupsDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete selected groups?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to delete {selectedGroupsCount} groups. This action cannot be undone.
+              Any clients in these groups will become ungrouped.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmBulkDeleteGroups} className="bg-destructive text-destructive-foreground">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

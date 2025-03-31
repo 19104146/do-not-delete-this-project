@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { ClientProvider } from "./contexts/ClientContext";
 import { useState } from "react";
+import Users from "./pages/Users";
 
 const App = () => {
   // Move queryClient instantiation inside the component
@@ -29,6 +30,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<MainLayout><Overview /></MainLayout>} />
               <Route path="/clients" element={<MainLayout><Clients /></MainLayout>} />
+              <Route path="/users" element={<MainLayout><Users /></MainLayout>} />
               <Route path="/templates" element={<MainLayout><Templates /></MainLayout>} />
               <Route path="/logs" element={<MainLayout><Logs /></MainLayout>} />
               <Route path="/api-keys" element={<MainLayout><ApiKeys /></MainLayout>} />
