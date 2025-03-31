@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { useClients } from '@/contexts/ClientContext';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -10,9 +11,10 @@ interface MainLayoutProps {
 
 const MainLayout = ({ children }: MainLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { clients } = useClients();
   
-  // Example client count - now retrieved from the ClientContext
-  const clientCount = 18;
+  // Get client count from context
+  const clientCount = clients.length;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

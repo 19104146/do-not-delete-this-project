@@ -13,30 +13,34 @@ import ApiKeys from "./pages/ApiKeys";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { ClientProvider } from "./contexts/ClientContext";
+import { useState } from "react";
 
-const queryClient = new QueryClient();
+const App = () => {
+  // Move queryClient instantiation inside the component
+  const [queryClient] = useState(() => new QueryClient());
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ClientProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<MainLayout><Overview /></MainLayout>} />
-            <Route path="/clients" element={<MainLayout><Clients /></MainLayout>} />
-            <Route path="/templates" element={<MainLayout><Templates /></MainLayout>} />
-            <Route path="/logs" element={<MainLayout><Logs /></MainLayout>} />
-            <Route path="/api-keys" element={<MainLayout><ApiKeys /></MainLayout>} />
-            <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </ClientProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ClientProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<MainLayout><Overview /></MainLayout>} />
+              <Route path="/clients" element={<MainLayout><Clients /></MainLayout>} />
+              <Route path="/templates" element={<MainLayout><Templates /></MainLayout>} />
+              <Route path="/logs" element={<MainLayout><Logs /></MainLayout>} />
+              <Route path="/api-keys" element={<MainLayout><ApiKeys /></MainLayout>} />
+              <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </ClientProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
