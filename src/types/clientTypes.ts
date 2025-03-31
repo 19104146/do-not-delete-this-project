@@ -19,3 +19,14 @@ export interface Group {
   clients: Client[];
   selected?: boolean;
 }
+
+export type AnnouncementStatus = 'active' | 'scheduled' | 'completed' | 'draft';
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  status: AnnouncementStatus;
+  selected?: boolean;
+}

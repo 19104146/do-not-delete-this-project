@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
 import Overview from "./pages/Overview";
 import Clients from "./pages/Clients";
+import Announcements from "./pages/Announcements";
 import Templates from "./pages/Templates";
 import Logs from "./pages/Logs";
 import ApiKeys from "./pages/ApiKeys";
@@ -30,6 +31,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<MainLayout><Overview /></MainLayout>} />
               <Route path="/clients" element={<MainLayout><Clients /></MainLayout>} />
+              <Route path="/announcements" element={<MainLayout><Announcements /></MainLayout>} />
               <Route path="/users" element={<MainLayout><Users /></MainLayout>} />
               <Route path="/templates" element={<MainLayout><Templates /></MainLayout>} />
               <Route path="/logs" element={<MainLayout><Logs /></MainLayout>} />

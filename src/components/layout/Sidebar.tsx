@@ -10,7 +10,8 @@ import {
   Settings, 
   ChevronLeft,
   ChevronRight,
-  Users
+  Users,
+  Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ const Sidebar = ({ collapsed, setCollapsed, clientCount }: SidebarProps) => {
   const navigationItems = [
     { name: 'Overview', path: '/', icon: Home },
     { name: 'Clients', path: '/clients', icon: Monitor, count: clientCount },
+    { name: 'Announcements', path: '/announcements', icon: Bell },
     { name: 'Users', path: '/users', icon: Users },
     { name: 'Templates', path: '/templates', icon: Layout },
     { name: 'Logs', path: '/logs', icon: List },
