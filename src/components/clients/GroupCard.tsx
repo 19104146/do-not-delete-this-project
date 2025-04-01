@@ -6,12 +6,14 @@ import {
   ChevronUp, 
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  RefreshCw,
+  Play,
+  AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusIndicator } from '../ui/StatusIndicator';
-import { ClientCard } from './ClientCard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ClientType {
   id: string;
@@ -40,9 +52,10 @@ interface GroupCardProps {
       down: number;
     };
   };
+  onSelect?: (clientId: string) => void;
 }
 
-export function GroupCard({ group }: GroupCardProps) {
+export function GroupCard({ group, onSelect }: GroupCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
 
@@ -52,6 +65,10 @@ export function GroupCard({ group }: GroupCardProps) {
         ? prev.filter(clientId => clientId !== id)
         : [...prev, id]
     );
+    
+    if (onSelect) {
+      onSelect(id);
+    }
   };
 
   const displayedClients = expanded 
@@ -116,18 +133,81 @@ export function GroupCard({ group }: GroupCardProps) {
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
-          {displayedClients.map(client => (
-            <ClientCard 
-              key={client.id} 
-              client={{
-                ...client,
-                isSelected: selectedClients.includes(client.id)
-              }}
-              onSelect={toggleClientSelection}
-            />
-          ))}
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox 
+                  id={`select-all-${group.id}`}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setSelectedClients(group.clients.map(c => c.id));
+                    } else {
+                      setSelectedClients([]);
+                    }
+                  }}
+                />
+              </TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>ID</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {displayedClients.map(client => (
+              <TableRow key={client.id} className="hover:bg-muted/30">
+                <TableCell>
+                  <Checkbox 
+                    id={`client-${client.id}`}
+                    checked={selectedClients.includes(client.id)}
+                    onCheckedChange={() => toggleClientSelection(client.id)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <StatusIndicator status={client.status} />
+                </TableCell>
+                <TableCell className="font-medium">{client.name}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{client.id}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem className="flex items-center gap-2">
+                          <RefreshCw size={14} />
+                          <span>Refresh content</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center gap-2">
+                          <Play size={14} />
+                          <span>Preview</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="flex items-center gap-2">
+                          <Edit size={14} />
+                          <span>Edit</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="flex items-center gap-2">
+                          <AlertCircle size={14} />
+                          <span>Check status</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="flex items-center gap-2 text-destructive">
+                          <Trash2 size={14} />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
         
         {hasMoreClients && (
           <Button
