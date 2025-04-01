@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { PlusCircle, Filter, Grid3X3, List, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { PlusCircle, Filter, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Client, Group } from '@/types/clientTypes';
@@ -68,13 +68,12 @@ const ClientsContent = () => {
     deleteGroup,
     selectGroup,
     selectAllInGroup,
-    selectClient // Make sure to include this function from the context
+    selectClient
   } = useClients();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [activeTab, setActiveTab] = useState('clients');
-  const [sortField, setSortField] = useState<'name' | 'status' | 'lastSeen'>('name');
+  const [sortField, setSortField] = useState<'name' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -92,7 +91,7 @@ const ClientsContent = () => {
   const [targetClientId, setTargetClientId] = useState<string | undefined>();
   const [addToGroupId, setAddToGroupId] = useState<string | undefined>();
   
-  const handleSort = (field: 'name' | 'status' | 'lastSeen') => {
+  const handleSort = (field: 'name' | 'status') => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -110,12 +109,6 @@ const ClientsContent = () => {
       return sortDirection === 'asc' 
         ? a.status.localeCompare(b.status) 
         : b.status.localeCompare(a.status);
-    } else if (sortField === 'lastSeen') {
-      const dateA = new Date(a.lastSeen).getTime();
-      const dateB = new Date(b.lastSeen).getTime();
-      return sortDirection === 'asc' 
-        ? dateA - dateB 
-        : dateB - dateA;
     }
     return 0;
   });
@@ -241,43 +234,74 @@ const ClientsContent = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Clients Management</h1>
-          <p className="text-muted-foreground">View and manage your digital signage clients</p>
+          <h1 className="text-2xl font-bold">Clients</h1>
         </div>
         
         <div className="flex items-center gap-2">
-          {activeTab === 'clients' && selectedClientsCount > 0 && (
+          {activeTab === 'clients' && (
             <>
-              <Button variant="outline" onClick={clearAllSelections} size="sm">
+              <Button 
+                variant="outline" 
+                onClick={clearAllSelections} 
+                size="sm"
+                disabled={selectedClientsCount === 0}
+              >
                 <SquareSlash size={16} className="mr-2" />
                 Clear ({selectedClientsCount})
               </Button>
               
-              <Button variant="outline" onClick={() => handleSendAnnouncement()} size="sm">
+              <Button 
+                variant="outline" 
+                onClick={() => handleSendAnnouncement()} 
+                size="sm"
+                disabled={selectedClientsCount === 0}
+              >
                 <BellRing size={16} className="mr-2" />
                 Announce
               </Button>
               
-              <Button variant="outline" className="text-destructive" onClick={handleBulkDeleteClients} size="sm">
+              <Button 
+                variant="outline" 
+                className="text-destructive" 
+                onClick={handleBulkDeleteClients} 
+                size="sm"
+                disabled={selectedClientsCount === 0}
+              >
                 <Trash2 size={16} className="mr-2" />
                 Delete
               </Button>
             </>
           )}
 
-          {activeTab === 'groups' && selectedGroupsCount > 0 && (
+          {activeTab === 'groups' && (
             <>
-              <Button variant="outline" onClick={clearAllSelections} size="sm">
+              <Button 
+                variant="outline" 
+                onClick={clearAllSelections} 
+                size="sm"
+                disabled={selectedGroupsCount === 0}
+              >
                 <SquareSlash size={16} className="mr-2" />
                 Clear ({selectedGroupsCount})
               </Button>
               
-              <Button variant="outline" onClick={() => handleSendAnnouncement()} size="sm">
+              <Button 
+                variant="outline" 
+                onClick={() => handleSendAnnouncement()} 
+                size="sm"
+                disabled={selectedGroupsCount === 0}
+              >
                 <BellRing size={16} className="mr-2" />
                 Announce
               </Button>
               
-              <Button variant="outline" className="text-destructive" onClick={handleBulkDeleteGroups} size="sm">
+              <Button 
+                variant="outline" 
+                className="text-destructive" 
+                onClick={handleBulkDeleteGroups} 
+                size="sm"
+                disabled={selectedGroupsCount === 0}
+              >
                 <Trash2 size={16} className="mr-2" />
                 Delete
               </Button>
@@ -286,8 +310,8 @@ const ClientsContent = () => {
           
           {activeTab === 'clients' && (
             <Button onClick={handleAddClient}>
-              <PlusCircle size={16} className="mr-2" />
-              Add Client
+              <UserPlus size={16} className="mr-2" />
+              Invite Client
             </Button>
           )}
 
@@ -342,23 +366,6 @@ const ClientsContent = () => {
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
-              <div className="flex rounded-md border overflow-hidden">
-                <Button
-                  variant={viewMode === 'grid' ? "default" : "outline"}
-                  className="rounded-none border-0 px-3"
-                  onClick={() => setViewMode('grid')}
-                >
-                  <Grid3X3 size={18} />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? "default" : "outline"}
-                  className="rounded-none border-0 px-3"
-                  onClick={() => setViewMode('list')}
-                >
-                  <List size={18} />
-                </Button>
-              </div>
             </div>
           </div>
         </CardHeader>
@@ -371,8 +378,8 @@ const ClientsContent = () => {
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="clients">All Clients ({totalClients})</TabsTrigger>
-              <TabsTrigger value="groups">All Groups ({totalGroups})</TabsTrigger>
+              <TabsTrigger value="clients">Clients ({totalClients})</TabsTrigger>
+              <TabsTrigger value="groups">Groups ({totalGroups})</TabsTrigger>
             </TabsList>
             
             <TabsContent value="clients" className="space-y-4">
@@ -423,24 +430,13 @@ const ClientsContent = () => {
                         </Button>
                       </TableHead>
                       <TableHead>Group</TableHead>
-                      <TableHead>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleSort('lastSeen')} 
-                          className="flex items-center p-0 h-auto font-medium"
-                        >
-                          Last Seen
-                          <ArrowUpDown size={14} className="ml-1" />
-                        </Button>
-                      </TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
+                        <TableCell colSpan={6} className="text-center py-8">
                           <div className="flex items-center justify-center">
                             <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
                             <p>Loading clients...</p>
@@ -481,9 +477,6 @@ const ClientsContent = () => {
                               <Badge variant="outline" className="bg-gray-100">Ungrouped</Badge>
                             )}
                           </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{formatDate(client.lastSeen)}</div>
-                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button variant="ghost" size="sm" onClick={() => handleEditClient(client)}>
@@ -498,7 +491,7 @@ const ClientsContent = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                           {searchQuery ? (
                             <>No clients found matching "{searchQuery}"</>
                           ) : (
