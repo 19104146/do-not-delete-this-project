@@ -78,7 +78,7 @@ export function GroupCard({ group, onSelect }: GroupCardProps) {
   const hasMoreClients = group.clients.length > 3;
 
   return (
-    <Card className="shadow-card">
+    <Card className="hs-accordion shadow-sm bg-white border border-gray-200 rounded-xl">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium">{group.name}</CardTitle>
@@ -90,17 +90,17 @@ export function GroupCard({ group, onSelect }: GroupCardProps) {
                   <MoreHorizontal size={16} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem className="flex items-center gap-2">
+              <DropdownMenuContent align="end" className="w-48 bg-white shadow-md border border-gray-200 rounded-lg">
+                <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100">
                   <Plus size={14} />
                   <span>Add Client</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="flex items-center gap-2">
+                <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100">
                   <Edit size={14} />
                   <span>Edit Group</span>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="flex items-center gap-2 text-error">
+                <DropdownMenuSeparator className="my-1 border-gray-200" />
+                <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                   <Trash2 size={14} />
                   <span>Delete Group</span>
                 </DropdownMenuItem>
@@ -133,10 +133,10 @@ export function GroupCard({ group, onSelect }: GroupCardProps) {
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <Table>
+        <Table className="w-full">
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]">
+            <TableRow className="border-b border-gray-200">
+              <TableHead className="w-[50px] py-3 px-4 text-left">
                 <Checkbox 
                   id={`select-all-${group.id}`}
                   onCheckedChange={(checked) => {
@@ -146,30 +146,32 @@ export function GroupCard({ group, onSelect }: GroupCardProps) {
                       setSelectedClients([]);
                     }
                   }}
+                  className="border-gray-300 rounded"
                 />
               </TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>ID</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">Status</TableHead>
+              <TableHead className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">Name</TableHead>
+              <TableHead className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">ID</TableHead>
+              <TableHead className="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayedClients.map(client => (
-              <TableRow key={client.id} className="hover:bg-muted/30">
-                <TableCell>
+              <TableRow key={client.id} className="hover:bg-gray-50">
+                <TableCell className="py-3 px-4">
                   <Checkbox 
                     id={`client-${client.id}`}
                     checked={selectedClients.includes(client.id)}
                     onCheckedChange={() => toggleClientSelection(client.id)}
+                    className="border-gray-300 rounded"
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-3 px-4">
                   <StatusIndicator status={client.status} />
                 </TableCell>
-                <TableCell className="font-medium">{client.name}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">{client.id}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="py-3 px-4 font-medium">{client.name}</TableCell>
+                <TableCell className="py-3 px-4 text-gray-500 text-sm">{client.id}</TableCell>
+                <TableCell className="py-3 px-4 text-right">
                   <div className="flex justify-end gap-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -177,26 +179,26 @@ export function GroupCard({ group, onSelect }: GroupCardProps) {
                           <MoreHorizontal size={16} />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem className="flex items-center gap-2">
+                      <DropdownMenuContent align="end" className="w-48 bg-white shadow-md border border-gray-200 rounded-lg">
+                        <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100">
                           <RefreshCw size={14} />
                           <span>Refresh content</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center gap-2">
+                        <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100">
                           <Play size={14} />
                           <span>Preview</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="flex items-center gap-2">
+                        <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100">
                           <Edit size={14} />
                           <span>Edit</span>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="flex items-center gap-2">
+                        <DropdownMenuSeparator className="my-1 border-gray-200" />
+                        <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100">
                           <AlertCircle size={14} />
                           <span>Check status</span>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="flex items-center gap-2 text-destructive">
+                        <DropdownMenuSeparator className="my-1 border-gray-200" />
+                        <DropdownMenuItem className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                           <Trash2 size={14} />
                           <span>Delete</span>
                         </DropdownMenuItem>
@@ -212,7 +214,7 @@ export function GroupCard({ group, onSelect }: GroupCardProps) {
         {hasMoreClients && (
           <Button
             variant="ghost"
-            className="w-full mt-4 text-primary"
+            className="w-full mt-4 text-primary hover:bg-gray-100"
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? (
