@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PlusCircle, Filter, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -240,15 +239,16 @@ const ClientsContent = () => {
         <div className="flex items-center gap-2">
           {activeTab === 'clients' && (
             <>
-              <Button 
-                variant="outline" 
-                onClick={clearAllSelections} 
-                size="sm"
-                disabled={selectedClientsCount === 0}
-              >
-                <SquareSlash size={16} className="mr-2" />
-                Clear ({selectedClientsCount})
-              </Button>
+              {selectedClientsCount > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={clearAllSelections} 
+                  size="sm"
+                >
+                  <SquareSlash size={16} className="mr-2" />
+                  Clear ({selectedClientsCount})
+                </Button>
+              )}
               
               <Button 
                 variant="outline" 
@@ -270,20 +270,26 @@ const ClientsContent = () => {
                 <Trash2 size={16} className="mr-2" />
                 Delete
               </Button>
+              
+              <Button onClick={handleAddClient}>
+                <UserPlus size={16} className="mr-2" />
+                Invite Client
+              </Button>
             </>
           )}
 
           {activeTab === 'groups' && (
             <>
-              <Button 
-                variant="outline" 
-                onClick={clearAllSelections} 
-                size="sm"
-                disabled={selectedGroupsCount === 0}
-              >
-                <SquareSlash size={16} className="mr-2" />
-                Clear ({selectedGroupsCount})
-              </Button>
+              {selectedGroupsCount > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={clearAllSelections} 
+                  size="sm"
+                >
+                  <SquareSlash size={16} className="mr-2" />
+                  Clear ({selectedGroupsCount})
+                </Button>
+              )}
               
               <Button 
                 variant="outline" 
@@ -305,21 +311,12 @@ const ClientsContent = () => {
                 <Trash2 size={16} className="mr-2" />
                 Delete
               </Button>
+              
+              <Button onClick={handleAddGroup}>
+                <UserPlus size={16} className="mr-2" />
+                Create Group
+              </Button>
             </>
-          )}
-          
-          {activeTab === 'clients' && (
-            <Button onClick={handleAddClient}>
-              <UserPlus size={16} className="mr-2" />
-              Invite Client
-            </Button>
-          )}
-
-          {activeTab === 'groups' && (
-            <Button onClick={handleAddGroup}>
-              <UserPlus size={16} className="mr-2" />
-              Add Group
-            </Button>
           )}
         </div>
       </div>
