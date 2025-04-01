@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PlusCircle, Filter, Grid3X3, List, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -66,7 +67,8 @@ const ClientsContent = () => {
     deleteClient,
     deleteGroup,
     selectGroup,
-    selectAllInGroup
+    selectAllInGroup,
+    selectClient // Make sure to include this function from the context
   } = useClients();
   
   const [searchQuery, setSearchQuery] = useState('');
