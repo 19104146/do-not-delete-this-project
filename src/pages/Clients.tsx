@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PlusCircle, Filter, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2, LayoutGrid, LayoutList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { GroupForm } from '@/components/clients/GroupForm';
 import { AnnouncementForm } from '@/components/clients/AnnouncementForm';
 import { ClientProvider, useClients } from '@/contexts/ClientContext';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import {
   Tabs,
   TabsContent,
