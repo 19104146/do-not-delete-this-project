@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import Sidebar from './Sidebar';
-import Header from './Header';
 import { useClients } from '@/contexts/ClientContext';
 
 interface MainLayoutProps {
@@ -28,9 +27,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         "flex-1 transition-all duration-300",
         sidebarCollapsed ? "ml-16" : "ml-sidebar"
       )}>
-        <Header sidebarCollapsed={sidebarCollapsed} />
-        
-        <main className="pt-24 px-6 pb-6">
+        <main className="pt-6 px-6 pb-6">
           {children}
         </main>
       </div>

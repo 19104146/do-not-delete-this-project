@@ -1,14 +1,17 @@
+
 import React, { useState } from 'react';
-import { PlusCircle, Filter, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { PlusCircle, Filter, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2, LayoutGrid, LayoutList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Client, Group } from '@/types/clientTypes';
 import { GroupSection } from '@/components/clients/GroupSection';
 import { ClientListItem } from '@/components/clients/ClientListItem';
+import { ClientCard } from '@/components/clients/ClientCard';
 import { ClientForm } from '@/components/clients/ClientForm';
 import { GroupForm } from '@/components/clients/GroupForm';
 import { AnnouncementForm } from '@/components/clients/AnnouncementForm';
 import { ClientProvider, useClients } from '@/contexts/ClientContext';
+import { Switch } from '@/components/ui/switch';
 import {
   Tabs,
   TabsContent,
@@ -48,6 +51,7 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusIndicator } from '@/components/ui/StatusIndicator';
+import { Toggle } from '@/components/ui/toggle';
 
 const ClientsContent = () => {
   const { 
@@ -77,6 +81,7 @@ const ClientsContent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   
   const [clientFormOpen, setClientFormOpen] = useState(false);
   const [groupFormOpen, setGroupFormOpen] = useState(false);
@@ -229,6 +234,10 @@ const ClientsContent = () => {
     return date.toLocaleString();
   };
   
+  const toggleViewMode = () => {
+    setViewMode(viewMode === 'table' ? 'grid' : 'table');
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -335,7 +344,33 @@ const ClientsContent = () => {
               />
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              {activeTab === 'clients' && (
+                <div className="flex items-center gap-3 mr-2">
+                  <span className="text-sm text-muted-foreground">View:</span>
+                  <div className="flex items-center bg-muted rounded-md p-1">
+                    <Toggle
+                      pressed={viewMode === 'table'}
+                      onClick={() => setViewMode('table')}
+                      className="flex items-center gap-1 data-[state=on]:bg-white data-[state=on]:text-primary"
+                      aria-label="Table View"
+                    >
+                      <LayoutList size={16} />
+                      <span className="ml-1 text-sm">Table</span>
+                    </Toggle>
+                    <Toggle
+                      pressed={viewMode === 'grid'}
+                      onClick={() => setViewMode('grid')}
+                      className="flex items-center gap-1 data-[state=on]:bg-white data-[state=on]:text-primary"
+                      aria-label="Grid View"
+                    >
+                      <LayoutGrid size={16} />
+                      <span className="ml-1 text-sm">Grid</span>
+                    </Toggle>
+                  </div>
+                </div>
+              )}
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex items-center">
@@ -398,107 +433,144 @@ const ClientsContent = () => {
                 </div>
               )}
               
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">Select</TableHead>
-                      <TableHead>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleSort('name')} 
-                          className="flex items-center p-0 h-auto font-medium"
-                        >
-                          Name
-                          <ArrowUpDown size={14} className="ml-1" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleSort('status')} 
-                          className="flex items-center p-0 h-auto font-medium"
-                        >
-                          Status
-                          <ArrowUpDown size={14} className="ml-1" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>Group</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+              <div className={cn(
+                "transition-all duration-300",
+                viewMode === 'grid' ? "animate-fade-in" : ""
+              )}>
+                {viewMode === 'table' ? (
+                  <div className="border rounded-lg overflow-hidden animate-fade-in">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[50px]">Select</TableHead>
+                          <TableHead>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleSort('name')} 
+                              className="flex items-center p-0 h-auto font-medium"
+                            >
+                              Name
+                              <ArrowUpDown size={14} className="ml-1" />
+                            </Button>
+                          </TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleSort('status')} 
+                              className="flex items-center p-0 h-auto font-medium"
+                            >
+                              Status
+                              <ArrowUpDown size={14} className="ml-1" />
+                            </Button>
+                          </TableHead>
+                          <TableHead>Group</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {isLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8">
+                              <div className="flex items-center justify-center">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                                <p>Loading clients...</p>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : paginatedClients.length > 0 ? (
+                          paginatedClients.map((client) => (
+                            <TableRow key={client.id} className="hover:bg-muted/30">
+                              <TableCell>
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                  checked={selectedClients.includes(client.id)}
+                                  onChange={(e) => selectClient(client.id, e.target.checked)}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">{client.name}</div>
+                                <div className="text-xs text-muted-foreground">{client.ip || 'No IP'}</div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">{client.location || 'N/A'}</div>
+                                <div className="text-xs text-muted-foreground">{client.contact || 'No contact'}</div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <StatusIndicator status={client.status} />
+                                  <span className="capitalize">{client.status}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {client.groupId ? (
+                                  <Badge variant="outline" className="capitalize">
+                                    {groups.find(g => g.id === client.groupId)?.name || 'Unknown'}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-gray-100">Ungrouped</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button variant="ghost" size="sm" onClick={() => handleEditClient(client)}>
+                                    Edit
+                                  </Button>
+                                  <Button variant="ghost" size="sm" onClick={() => handleSendAnnouncement(undefined, client.id)}>
+                                    Announce
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                              {searchQuery ? (
+                                <>No clients found matching "{searchQuery}"</>
+                              ) : (
+                                <>No clients yet. Add a client to get started.</>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in">
                     {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
-                          <div className="flex items-center justify-center">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-                            <p>Loading clients...</p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                      <div className="col-span-full flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                        <p>Loading clients...</p>
+                      </div>
                     ) : paginatedClients.length > 0 ? (
                       paginatedClients.map((client) => (
-                        <TableRow key={client.id} className="hover:bg-muted/30">
-                          <TableCell>
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                              checked={selectedClients.includes(client.id)}
-                              onChange={(e) => selectClient(client.id, e.target.checked)}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">{client.name}</div>
-                            <div className="text-xs text-muted-foreground">{client.ip || 'No IP'}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{client.location || 'N/A'}</div>
-                            <div className="text-xs text-muted-foreground">{client.contact || 'No contact'}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <StatusIndicator status={client.status} />
-                              <span className="capitalize">{client.status}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {client.groupId ? (
-                              <Badge variant="outline" className="capitalize">
-                                {groups.find(g => g.id === client.groupId)?.name || 'Unknown'}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-gray-100">Ungrouped</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="ghost" size="sm" onClick={() => handleEditClient(client)}>
-                                Edit
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleSendAnnouncement(undefined, client.id)}>
-                                Announce
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                        <ClientCard 
+                          key={client.id} 
+                          client={{
+                            id: client.id,
+                            name: client.name,
+                            status: client.status,
+                            isSelected: selectedClients.includes(client.id)
+                          }}
+                          onSelect={(id) => selectClient(id, !selectedClients.includes(id))}
+                        />
                       ))
                     ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          {searchQuery ? (
-                            <>No clients found matching "{searchQuery}"</>
-                          ) : (
-                            <>No clients yet. Add a client to get started.</>
-                          )}
-                        </TableCell>
-                      </TableRow>
+                      <div className="col-span-full text-center py-8 text-muted-foreground">
+                        {searchQuery ? (
+                          <>No clients found matching "{searchQuery}"</>
+                        ) : (
+                          <>No clients yet. Add a client to get started.</>
+                        )}
+                      </div>
                     )}
-                  </TableBody>
-                </Table>
+                  </div>
+                )}
               </div>
               
               {filteredClients.length > itemsPerPage && (
