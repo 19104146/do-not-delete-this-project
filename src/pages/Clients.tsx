@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PlusCircle, Filter, Search, BellRing, Trash2, CheckSquare, SquareSlash, UserPlus, ArrowUpDown, SlidersHorizontal, Loader2, LayoutGrid, LayoutList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,12 +13,7 @@ import { AnnouncementForm } from '@/components/clients/AnnouncementForm';
 import { ClientProvider, useClients } from '@/contexts/ClientContext';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
+import { Toggle } from '@/components/ui/toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,7 +47,12 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusIndicator } from '@/components/ui/StatusIndicator';
-import { Toggle } from '@/components/ui/toggle';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const ClientsContent = () => {
   const { 
@@ -75,7 +76,6 @@ const ClientsContent = () => {
   } = useClients();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('clients');
   const [sortField, setSortField] = useState<'name' | 'status'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,7 +87,6 @@ const ClientsContent = () => {
   const [groupFormOpen, setGroupFormOpen] = useState(false);
   const [announcementFormOpen, setAnnouncementFormOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [bulkDeleteGroupsDialogOpen, setBulkDeleteGroupsDialogOpen] = useState(false);
   
   const [editingClient, setEditingClient] = useState<Client | undefined>();
   const [editingGroup, setEditingGroup] = useState<Group | undefined>();
@@ -128,14 +127,6 @@ const ClientsContent = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  
-  const filteredGroups = groups.filter(group => 
-    group.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  
-  const filteredUngroupedClients = getUngroupedClients().filter(client => 
-    client.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const handleAddClient = () => {
     setEditingClient(undefined);
@@ -154,30 +145,6 @@ const ClientsContent = () => {
     } else {
       addClient(clientData);
     }
-  };
-  
-  const handleAddGroup = () => {
-    setEditingGroup(undefined);
-    setGroupFormOpen(true);
-  };
-  
-  const handleEditGroup = (group: Group) => {
-    setEditingGroup(group);
-    setGroupFormOpen(true);
-  };
-  
-  const handleSaveGroup = (groupData: Omit<Group, 'id' | 'clients'>) => {
-    if (editingGroup) {
-      updateGroup(editingGroup.id, groupData);
-    } else {
-      addGroup(groupData);
-    }
-  };
-  
-  const handleAddClientToGroup = (groupId: string) => {
-    setAddToGroupId(groupId);
-    setEditingClient(undefined);
-    setClientFormOpen(true);
   };
   
   const handleSendAnnouncement = (groupId?: string, clientId?: string) => {
@@ -204,217 +171,179 @@ const ClientsContent = () => {
       toast.success(`Deleted ${selectedClients.length} clients`);
     }, 500);
   };
-
-  const handleBulkDeleteGroups = () => {
-    setBulkDeleteGroupsDialogOpen(true);
-  };
-  
-  const confirmBulkDeleteGroups = () => {
-    setIsLoading(true);
-    for (const groupId of selectedGroups) {
-      deleteGroup(groupId);
-    }
-    
-    setBulkDeleteGroupsDialogOpen(false);
-    clearAllSelections();
-    
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success(`Deleted ${selectedGroups.length} groups`);
-    }, 500);
-  };
   
   const totalClients = clients.length;
-  const totalGroups = groups.length;
   const selectedClientsCount = selectedClients.length;
-  const selectedGroupsCount = selectedGroups.length;
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString();
   };
   
-  const toggleViewMode = () => {
-    setViewMode(viewMode === 'table' ? 'grid' : 'table');
-  };
-  
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Clients</h1>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Clients</h1>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {selectedClientsCount > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    onClick={clearAllSelections} 
+                    size="sm"
+                  >
+                    <SquareSlash size={16} className="mr-2" />
+                    Clear ({selectedClientsCount})
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Clear all selections</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleSendAnnouncement()} 
+                  size="sm"
+                  disabled={selectedClientsCount === 0}
+                >
+                  <BellRing size={16} className="mr-2" />
+                  Announce
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Send announcement to selected clients</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="text-destructive" 
+                  onClick={handleBulkDeleteClients} 
+                  size="sm"
+                  disabled={selectedClientsCount === 0}
+                >
+                  <Trash2 size={16} className="mr-2" />
+                  Delete
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete selected clients</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button onClick={handleAddClient}>
+                  <UserPlus size={16} className="mr-2" />
+                  Invite Client
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add a new client</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          {activeTab === 'clients' && (
-            <>
-              {selectedClientsCount > 0 && (
-                <Button 
-                  variant="outline" 
-                  onClick={clearAllSelections} 
-                  size="sm"
-                >
-                  <SquareSlash size={16} className="mr-2" />
-                  Clear ({selectedClientsCount})
-                </Button>
-              )}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="relative flex-1 flex items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Input 
+                    type="search" 
+                    placeholder="Search clients..." 
+                    className="pl-10 w-full"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="icon" className="ml-2">
+                          <Filter size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-56">
+                        <DropdownMenuLabel>Filter Clients</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel className="text-xs font-normal text-gray-500">Status</DropdownMenuLabel>
+                          <DropdownMenuCheckboxItem checked>Connected</DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem checked>Warning</DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem checked>Error</DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem checked>Inactive</DropdownMenuCheckboxItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel className="text-xs font-normal text-gray-500">Groups</DropdownMenuLabel>
+                          {groups.map(group => (
+                            <DropdownMenuCheckboxItem key={group.id} checked>{group.name}</DropdownMenuCheckboxItem>
+                          ))}
+                          <DropdownMenuCheckboxItem checked>Ungrouped</DropdownMenuCheckboxItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Filter clients</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               
-              <Button 
-                variant="outline" 
-                onClick={() => handleSendAnnouncement()} 
-                size="sm"
-                disabled={selectedClientsCount === 0}
-              >
-                <BellRing size={16} className="mr-2" />
-                Announce
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="text-destructive" 
-                onClick={handleBulkDeleteClients} 
-                size="sm"
-                disabled={selectedClientsCount === 0}
-              >
-                <Trash2 size={16} className="mr-2" />
-                Delete
-              </Button>
-              
-              <Button onClick={handleAddClient}>
-                <UserPlus size={16} className="mr-2" />
-                Invite Client
-              </Button>
-            </>
-          )}
-
-          {activeTab === 'groups' && (
-            <>
-              {selectedGroupsCount > 0 && (
-                <Button 
-                  variant="outline" 
-                  onClick={clearAllSelections} 
-                  size="sm"
-                >
-                  <SquareSlash size={16} className="mr-2" />
-                  Clear ({selectedGroupsCount})
-                </Button>
-              )}
-              
-              <Button 
-                variant="outline" 
-                onClick={() => handleSendAnnouncement()} 
-                size="sm"
-                disabled={selectedGroupsCount === 0}
-              >
-                <BellRing size={16} className="mr-2" />
-                Announce
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="text-destructive" 
-                onClick={handleBulkDeleteGroups} 
-                size="sm"
-                disabled={selectedGroupsCount === 0}
-              >
-                <Trash2 size={16} className="mr-2" />
-                Delete
-              </Button>
-              
-              <Button onClick={handleAddGroup}>
-                <UserPlus size={16} className="mr-2" />
-                Create Group
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-      
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-              <Input 
-                type="search" 
-                placeholder="Search clients and groups..." 
-                className="pl-10 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex gap-2 items-center">
-              {activeTab === 'clients' && (
-                <div className="flex items-center gap-3 mr-2">
-                  <span className="text-sm text-muted-foreground">View:</span>
-                  <div className="flex items-center bg-muted rounded-md p-1">
+              <div className="flex items-center bg-muted rounded-md p-1 ml-auto">
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Toggle
                       pressed={viewMode === 'table'}
                       onClick={() => setViewMode('table')}
-                      className="flex items-center gap-1 data-[state=on]:bg-white data-[state=on]:text-primary"
+                      className="data-[state=on]:bg-white data-[state=on]:text-primary"
                       aria-label="Table View"
                     >
-                      <LayoutList size={16} />
-                      <span className="ml-1 text-sm">Table</span>
+                      <LayoutList size={18} />
                     </Toggle>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Table View</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Toggle
                       pressed={viewMode === 'grid'}
                       onClick={() => setViewMode('grid')}
-                      className="flex items-center gap-1 data-[state=on]:bg-white data-[state=on]:text-primary"
+                      className="data-[state=on]:bg-white data-[state=on]:text-primary"
                       aria-label="Grid View"
                     >
-                      <LayoutGrid size={16} />
-                      <span className="ml-1 text-sm">Grid</span>
+                      <LayoutGrid size={18} />
                     </Toggle>
-                  </div>
-                </div>
-              )}
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center">
-                    <SlidersHorizontal size={16} className="mr-2" />
-                    Filter
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
-                  <DropdownMenuLabel>Filter Clients</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs font-normal text-gray-500">Status</DropdownMenuLabel>
-                    <DropdownMenuCheckboxItem checked>Connected</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked>Warning</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked>Error</DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem checked>Inactive</DropdownMenuCheckboxItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs font-normal text-gray-500">Groups</DropdownMenuLabel>
-                    {groups.map(group => (
-                      <DropdownMenuCheckboxItem key={group.id} checked>{group.name}</DropdownMenuCheckboxItem>
-                    ))}
-                    <DropdownMenuCheckboxItem checked>Ungrouped</DropdownMenuCheckboxItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Grid View</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <Tabs 
-            defaultValue="clients" 
-            value={activeTab} 
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="clients">Clients ({totalClients})</TabsTrigger>
-              <TabsTrigger value="groups">Groups ({totalGroups})</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="clients" className="space-y-4">
+          </CardHeader>
+          
+          <CardContent>
+            <div className="space-y-4">
               {selectedClientsCount === 0 && (
                 <div className="flex gap-2 items-center mb-4">
                   <Button 
@@ -516,12 +445,38 @@ const ClientsContent = () => {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Button variant="ghost" size="sm" onClick={() => handleEditClient(client)}>
-                                    Edit
-                                  </Button>
-                                  <Button variant="ghost" size="sm" onClick={() => handleSendAnnouncement(undefined, client.id)}>
-                                    Announce
-                                  </Button>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClient(client)}>
+                                        <Edit size={16} />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Edit client</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleSendAnnouncement(undefined, client.id)}>
+                                        <Megaphone size={16} />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Send announcement</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteClient(client.id)}>
+                                        <Trash2 size={16} />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Delete client</p>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -644,110 +599,43 @@ const ClientsContent = () => {
                   </select>
                 </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="groups" className="space-y-4">
-              {selectedGroupsCount === 0 && groups.length > 0 && (
-                <div className="flex gap-2 items-center mb-4">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-primary"
-                    onClick={() => groups.forEach(group => selectGroup(group.id, true))}
-                  >
-                    <CheckSquare size={16} className="mr-1" />
-                    Select all groups
-                  </Button>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    {selectedGroupsCount} of {totalGroups} groups selected
-                  </div>
-                </div>
-              )}
-              
-              {filteredGroups.length > 0 ? (
-                filteredGroups.map(group => (
-                  <GroupSection
-                    key={group.id}
-                    group={group}
-                    clients={getClientsInGroup(group.id)}
-                    onEditGroup={handleEditGroup}
-                    onEditClient={handleEditClient}
-                    onSendAnnouncement={handleSendAnnouncement}
-                    onAddClient={handleAddClientToGroup}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground border rounded-md">
-                  {searchQuery ? (
-                    <>No groups found matching "{searchQuery}"</>
-                  ) : (
-                    <>No groups yet. Create a group to organize your clients.</>
-                  )}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-      
-      <ClientForm 
-        client={editingClient}
-        groupId={addToGroupId}
-        open={clientFormOpen}
-        onOpenChange={setClientFormOpen}
-        onSave={handleSaveClient}
-      />
-      
-      <GroupForm
-        group={editingGroup}
-        open={groupFormOpen}
-        onOpenChange={setGroupFormOpen}
-        onSave={handleSaveGroup}
-      />
-      
-      <AnnouncementForm
-        open={announcementFormOpen}
-        onOpenChange={setAnnouncementFormOpen}
-        targetGroupId={targetGroupId}
-        targetClientId={targetClientId}
-      />
-      
-      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete selected clients?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to delete {selectedClientsCount} clients. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmBulkDeleteClients} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={bulkDeleteGroupsDialogOpen} onOpenChange={setBulkDeleteGroupsDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete selected groups?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to delete {selectedGroupsCount} groups. This action cannot be undone.
-              Any clients in these groups will become ungrouped.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmBulkDeleteGroups} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <ClientForm 
+          client={editingClient}
+          groupId={addToGroupId}
+          open={clientFormOpen}
+          onOpenChange={setClientFormOpen}
+          onSave={handleSaveClient}
+        />
+        
+        <AnnouncementForm
+          open={announcementFormOpen}
+          onOpenChange={setAnnouncementFormOpen}
+          targetGroupId={targetGroupId}
+          targetClientId={targetClientId}
+        />
+        
+        <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete selected clients?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to delete {selectedClientsCount} clients. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmBulkDeleteClients} className="bg-destructive text-destructive-foreground">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
   );
 };
 
