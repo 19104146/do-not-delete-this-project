@@ -54,31 +54,31 @@ const activities = [
 
 const RecentActivity = () => {
   return (
-    <Card className="shadow-card">
-      <CardHeader className="pb-2">
+    <Card className="shadow-sm border border-gray-200">
+      <CardHeader className="pb-2 pt-5 px-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-medium">Recent Activity</CardTitle>
-          <Button variant="outline" size="sm" className="h-8 text-xs">
+          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+          <Button variant="outline" size="sm" className="h-9 text-sm font-medium">
             View All
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-0 pb-0">
+      <CardContent className="px-0 pb-1">
         <div className="divide-y divide-gray-100">
           {activities.map((activity) => (
-            <div key={activity.id} className="flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors">
-              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${activity.iconColor}`}>
+            <div key={activity.id} className="flex items-start gap-4 p-6 hover:bg-gray-50 transition-colors">
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${activity.iconColor}`}>
                 <activity.icon size={20} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-gray-900">{activity.action}</p>
-                <p className="text-sm text-gray-500">{activity.subject}</p>
-                <div className="flex items-center mt-1">
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                <p className="font-semibold text-sm text-gray-900">{activity.action}</p>
+                <p className="text-sm text-gray-600 mt-0.5">{activity.subject}</p>
+                <div className="flex items-center mt-2">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
                     <User size={12} />
                     <span>{activity.user}</span>
                   </div>
-                  <span className="mx-1 text-gray-300">•</span>
+                  <span className="mx-2 text-gray-300">•</span>
                   <span className="text-xs text-gray-500">{activity.time}</span>
                 </div>
               </div>

@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -56,41 +57,78 @@ const Sidebar = ({ collapsed, setCollapsed, clientCount }: SidebarProps) => {
         </button>
       </div>
       
-      <nav className="p-2 space-y-1">
+      <nav className="p-2 space-y-1 flex flex-col h-[calc(100%-4rem)]">
         <TooltipProvider delayDuration={0}>
-          {navigationItems.map((item) => (
-            <Tooltip key={item.name}>
+          <div className="flex-1">
+            {navigationItems.map((item) => (
+              <Tooltip key={item.name}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors my-1.5",
+                      "hover:bg-gray-100",
+                      location.pathname === item.path 
+                        ? "bg-primary/10 text-primary font-medium" 
+                        : "text-gray-700"
+                    )}
+                  >
+                    <item.icon size={20} />
+                    {!collapsed && (
+                      <>
+                        <span className="text-sm">{item.name}</span>
+                        {item.count !== undefined && (
+                          <Badge variant="outline" className="ml-auto">
+                            {item.count}
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                  </Link>
+                </TooltipTrigger>
+                {collapsed && (
+                  <TooltipContent side="right">
+                    <p>{item.name}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            ))}
+          </div>
+
+          {/* Account section */}
+          <div className={cn(
+            "mt-auto pt-4 border-t border-gray-200",
+            collapsed ? "px-2" : "px-3"
+          )}>
+            <Tooltip>
               <TooltipTrigger asChild>
-                <Link
-                  to={item.path}
+                <Link 
+                  to="/profile" 
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
-                    "hover:bg-gray-100",
-                    location.pathname === item.path 
-                      ? "bg-primary/10 text-primary" 
-                      : "text-gray-700"
+                    "flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 transition-colors",
+                    collapsed ? "justify-center" : ""
                   )}
                 >
-                  <item.icon size={20} />
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="/placeholder.svg" />
+                    <AvatarFallback className="bg-primary/10 text-primary">AD</AvatarFallback>
+                  </Avatar>
+                  
                   {!collapsed && (
-                    <>
-                      <span>{item.name}</span>
-                      {item.count !== undefined && (
-                        <Badge variant="outline" className="ml-auto">
-                          {item.count}
-                        </Badge>
-                      )}
-                    </>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">Admin User</span>
+                      <span className="text-xs text-gray-500">admin@example.com</span>
+                    </div>
                   )}
                 </Link>
               </TooltipTrigger>
               {collapsed && (
                 <TooltipContent side="right">
-                  <p>{item.name}</p>
+                  <p>Admin User</p>
                 </TooltipContent>
               )}
             </Tooltip>
-          ))}
+          </div>
         </TooltipProvider>
       </nav>
     </aside>

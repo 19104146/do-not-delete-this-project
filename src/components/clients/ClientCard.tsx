@@ -6,7 +6,8 @@ import {
   Play, 
   AlertCircle, 
   Trash2,
-  Edit
+  Edit,
+  Megaphone
 } from 'lucide-react';
 import { StatusIndicator } from '../ui/StatusIndicator';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,7 @@ export function ClientCard({ client, onSelect }: ClientCardProps) {
   return (
     <Card 
       className={cn(
-        "relative border transition-all duration-200 cursor-pointer shadow-card overflow-hidden",
+        "relative border border-gray-200 transition-all duration-200 cursor-pointer shadow-sm overflow-hidden",
         isHovering ? "border-primary/50" : "border-gray-200",
         client.isSelected && "ring-2 ring-primary ring-offset-1"
       )}
@@ -45,40 +46,45 @@ export function ClientCard({ client, onSelect }: ClientCardProps) {
       onClick={() => onSelect?.(client.id)}
     >
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <StatusIndicator status={client.status} size="sm" />
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem className="flex items-center gap-2">
-                <RefreshCw size={14} />
-                <span>Refresh content</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2">
-                <Play size={14} />
-                <span>Preview</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2">
-                <Edit size={14} />
-                <span>Edit</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex items-center gap-2">
-                <AlertCircle size={14} />
-                <span>Check status</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="flex items-center gap-2 text-error">
-                <Trash2 size={14} />
-                <span>Delete</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center space-x-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-primary">
+              <Megaphone size={14} />
+            </Button>
+            
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-primary">
+              <Edit size={14} />
+            </Button>
+            
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500 hover:text-destructive">
+              <Trash2 size={14} />
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-500">
+                  <MoreHorizontal size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 bg-white shadow-md border border-gray-200 rounded-lg p-1">
+                <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded-md">
+                  <RefreshCw size={14} />
+                  <span>Refresh content</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded-md">
+                  <Play size={14} />
+                  <span>Preview</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1 border-gray-200" />
+                <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 rounded-md">
+                  <AlertCircle size={14} />
+                  <span>Check status</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
         
         <div className="text-sm font-medium truncate mb-1">{client.name}</div>
