@@ -2,7 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   PlusCircle, Filter, Search, Trash2, BellRing, CheckSquare, 
-  SquareSlash, ArrowUpDown, SlidersHorizontal, Loader2 
+  SquareSlash, ArrowUpDown, SlidersHorizontal, Loader2, 
+  Calendar, Clock, Users as UsersIcon, AlertTriangle, Edit, Calendar as CalendarIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,61 +24,138 @@ import {
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, 
   PaginationLink, PaginationNext, PaginationPrevious 
 } from '@/components/ui/pagination';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { 
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Announcement, AnnouncementStatus } from '@/types/clientTypes';
+import { cn } from '@/lib/utils';
 
-// Mock announcements data
+// Extended types for the enhanced announcement system
+type AnnouncementPriority = 'high' | 'medium' | 'low';
+type AnnouncementStatus = 'active' | 'scheduled' | 'completed' | 'draft';
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  status: AnnouncementStatus;
+  priority?: AnnouncementPriority;
+  publishDate?: string;
+  expirationDate?: string;
+  targetAudience?: string[];
+  template?: string;
+}
+
+// Mock announcements data with enhanced fields
 const mockAnnouncements: Announcement[] = [
   {
     id: '1',
     title: 'System Maintenance',
     content: 'There will be a scheduled maintenance on all systems this weekend.',
     createdAt: '2023-06-10T10:00:00Z',
-    status: 'scheduled'
+    status: 'scheduled',
+    priority: 'high',
+    publishDate: '2023-06-15T10:00:00Z',
+    expirationDate: '2023-06-18T10:00:00Z',
+    targetAudience: ['All Clients', 'Admin Users'],
+    template: 'Maintenance Notice'
   },
   {
     id: '2',
     title: 'New Feature Release',
     content: 'We are excited to announce the release of our new dashboard features!',
     createdAt: '2023-05-20T14:30:00Z',
-    status: 'active'
+    status: 'active',
+    priority: 'medium',
+    publishDate: '2023-05-20T14:30:00Z',
+    targetAudience: ['Premium Clients'],
+    template: 'Feature Announcement'
   },
   {
     id: '3',
     title: 'Important Security Update',
     content: 'Please ensure all clients are updated to the latest security patch.',
     createdAt: '2023-05-15T08:45:00Z',
-    status: 'active'
+    status: 'active',
+    priority: 'high',
+    publishDate: '2023-05-15T08:45:00Z',
+    targetAudience: ['All Clients'],
+    template: 'Security Alert'
   },
   {
     id: '4',
     title: 'Holiday Schedule',
     content: 'Our offices will be closed during the upcoming holiday. Support will be limited.',
     createdAt: '2023-04-30T16:20:00Z',
-    status: 'completed'
+    status: 'completed',
+    priority: 'low',
+    publishDate: '2023-04-30T16:20:00Z',
+    expirationDate: '2023-05-02T09:00:00Z',
+    targetAudience: ['All Clients', 'Admin Users', 'Support Team'],
+    template: 'Office Notice'
   },
   {
     id: '5',
     title: 'Network Upgrades',
     content: 'We will be upgrading our network infrastructure to improve performance.',
     createdAt: '2023-04-25T11:30:00Z',
-    status: 'draft'
+    status: 'draft',
+    priority: 'medium',
+    targetAudience: ['Technical Contacts'],
+    template: 'Maintenance Notice'
   }
+];
+
+// Mock audience options for targeting
+const audienceOptions = [
+  'All Clients', 
+  'Premium Clients', 
+  'Technical Contacts', 
+  'Admin Users', 
+  'Support Team'
+];
+
+// Mock template options
+const templateOptions = [
+  'Feature Announcement', 
+  'Maintenance Notice', 
+  'Security Alert', 
+  'Office Notice', 
+  'General Update'
 ];
 
 const Announcements = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>(mockAnnouncements);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<AnnouncementStatus[]>(['active', 'scheduled', 'completed', 'draft']);
-  const [sortField, setSortField] = useState<'title' | 'createdAt' | 'status'>('createdAt');
+  const [selectedPriorities, setSelectedPriorities] = useState<AnnouncementPriority[]>(['high', 'medium', 'low']);
+  const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<'title' | 'createdAt' | 'status' | 'priority' | 'publishDate'>('publishDate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedAnnouncements, setSelectedAnnouncements] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [announcementDialogOpen, setAnnouncementDialogOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   
-  // Filter announcements based on search query and selected statuses
+  // Form state for new/editing announcement
+  const [formTitle, setFormTitle] = useState('');
+  const [formContent, setFormContent] = useState('');
+  const [formPublishDate, setFormPublishDate] = useState<Date | undefined>(new Date());
+  const [formExpirationDate, setFormExpirationDate] = useState<Date | undefined>(undefined);
+  const [formPriority, setFormPriority] = useState<AnnouncementPriority>('medium');
+  const [formTargetAudience, setFormTargetAudience] = useState<string[]>([]);
+  const [formTemplate, setFormTemplate] = useState<string>('');
+  const [formStatus, setFormStatus] = useState<AnnouncementStatus>('draft');
+  
+  // Filter announcements based on search query, selected statuses, priorities, and audiences
   const filteredAnnouncements = useMemo(() => {
     return announcements.filter(announcement => {
       const matchesQuery = 
@@ -85,10 +163,16 @@ const Announcements = () => {
         announcement.content.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesStatus = selectedStatuses.includes(announcement.status);
+      const matchesPriority = !announcement.priority || selectedPriorities.includes(announcement.priority);
       
-      return matchesQuery && matchesStatus;
+      const matchesAudience = 
+        selectedAudiences.length === 0 || 
+        (announcement.targetAudience && 
+         announcement.targetAudience.some(audience => selectedAudiences.includes(audience)));
+      
+      return matchesQuery && matchesStatus && matchesPriority && matchesAudience;
     });
-  }, [announcements, searchQuery, selectedStatuses]);
+  }, [announcements, searchQuery, selectedStatuses, selectedPriorities, selectedAudiences]);
   
   // Sort announcements
   const sortedAnnouncements = useMemo(() => {
@@ -101,6 +185,15 @@ const Announcements = () => {
         return sortDirection === 'asc'
           ? a.status.localeCompare(b.status)
           : b.status.localeCompare(a.status);
+      } else if (sortField === 'priority') {
+        const priorityOrder = { high: 1, medium: 2, low: 3 };
+        const aValue = a.priority ? priorityOrder[a.priority] : 4;
+        const bValue = b.priority ? priorityOrder[b.priority] : 4;
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      } else if (sortField === 'publishDate') {
+        const dateA = a.publishDate ? new Date(a.publishDate).getTime() : new Date(a.createdAt).getTime();
+        const dateB = b.publishDate ? new Date(b.publishDate).getTime() : new Date(b.createdAt).getTime();
+        return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
       } else {
         // Sort by createdAt date
         const dateA = new Date(a.createdAt).getTime();
@@ -118,7 +211,7 @@ const Announcements = () => {
   
   const totalPages = Math.ceil(sortedAnnouncements.length / itemsPerPage);
   
-  const handleSort = (field: 'title' | 'createdAt' | 'status') => {
+  const handleSort = (field: 'title' | 'createdAt' | 'status' | 'priority' | 'publishDate') => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -157,6 +250,26 @@ const Announcements = () => {
     });
   };
   
+  const handlePriorityToggle = (priority: AnnouncementPriority) => {
+    setSelectedPriorities(prev => {
+      if (prev.includes(priority)) {
+        return prev.filter(p => p !== priority);
+      } else {
+        return [...prev, priority];
+      }
+    });
+  };
+  
+  const handleAudienceToggle = (audience: string) => {
+    setSelectedAudiences(prev => {
+      if (prev.includes(audience)) {
+        return prev.filter(a => a !== audience);
+      } else {
+        return [...prev, audience];
+      }
+    });
+  };
+  
   const handleDeleteAnnouncements = () => {
     setBulkDeleteDialogOpen(true);
   };
@@ -185,6 +298,105 @@ const Announcements = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString();
+  };
+  
+  const openNewAnnouncementDialog = () => {
+    // Reset form fields for new announcement
+    setFormTitle('');
+    setFormContent('');
+    setFormPublishDate(new Date());
+    setFormExpirationDate(undefined);
+    setFormPriority('medium');
+    setFormTargetAudience([]);
+    setFormTemplate('');
+    setFormStatus('draft');
+    setEditingAnnouncement(null);
+    setAnnouncementDialogOpen(true);
+  };
+  
+  const openEditAnnouncementDialog = (announcement: Announcement) => {
+    setFormTitle(announcement.title);
+    setFormContent(announcement.content);
+    setFormPublishDate(announcement.publishDate ? new Date(announcement.publishDate) : new Date());
+    setFormExpirationDate(announcement.expirationDate ? new Date(announcement.expirationDate) : undefined);
+    setFormPriority(announcement.priority || 'medium');
+    setFormTargetAudience(announcement.targetAudience || []);
+    setFormTemplate(announcement.template || '');
+    setFormStatus(announcement.status);
+    setEditingAnnouncement(announcement);
+    setAnnouncementDialogOpen(true);
+  };
+  
+  const handleSaveAnnouncement = () => {
+    if (!formTitle.trim()) {
+      toast.error('Title is required');
+      return;
+    }
+    
+    if (!formContent.trim()) {
+      toast.error('Content is required');
+      return;
+    }
+    
+    if (!formPublishDate) {
+      toast.error('Publication date is required');
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    setTimeout(() => {
+      const newAnnouncement: Announcement = {
+        id: editingAnnouncement ? editingAnnouncement.id : Date.now().toString(),
+        title: formTitle,
+        content: formContent,
+        createdAt: editingAnnouncement ? editingAnnouncement.createdAt : new Date().toISOString(),
+        status: formStatus,
+        priority: formPriority,
+        publishDate: formPublishDate.toISOString(),
+        expirationDate: formExpirationDate ? formExpirationDate.toISOString() : undefined,
+        targetAudience: formTargetAudience,
+        template: formTemplate || undefined
+      };
+      
+      if (editingAnnouncement) {
+        // Update existing announcement
+        setAnnouncements(prev => 
+          prev.map(a => a.id === editingAnnouncement.id ? newAnnouncement : a)
+        );
+        toast.success('Announcement updated successfully');
+      } else {
+        // Add new announcement
+        setAnnouncements(prev => [...prev, newAnnouncement]);
+        toast.success('Announcement created successfully');
+      }
+      
+      setAnnouncementDialogOpen(false);
+      setIsLoading(false);
+    }, 500);
+  };
+  
+  const handleTargetAudienceChange = (audience: string) => {
+    setFormTargetAudience(prev => {
+      if (prev.includes(audience)) {
+        return prev.filter(a => a !== audience);
+      } else {
+        return [...prev, audience];
+      }
+    });
+  };
+  
+  const getPriorityBadge = (priority?: AnnouncementPriority) => {
+    switch (priority) {
+      case 'high':
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">High</Badge>;
+      case 'medium':
+        return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200">Medium</Badge>;
+      case 'low':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Low</Badge>;
+      default:
+        return null;
+    }
   };
   
   const getStatusBadge = (status: AnnouncementStatus) => {
@@ -227,7 +439,7 @@ const Announcements = () => {
               </Button>
             </>
           ) : (
-            <Button onClick={() => toast.info("Create announcement functionality not implemented yet")}>
+            <Button onClick={openNewAnnouncementDialog}>
               <PlusCircle size={16} className="mr-2" />
               New Announcement
             </Button>
@@ -287,6 +499,45 @@ const Announcements = () => {
                       Draft
                     </DropdownMenuCheckboxItem>
                   </DropdownMenuGroup>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-xs font-normal text-gray-500">Priority</DropdownMenuLabel>
+                    <DropdownMenuCheckboxItem 
+                      checked={selectedPriorities.includes('high')}
+                      onCheckedChange={() => handlePriorityToggle('high')}
+                    >
+                      High
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={selectedPriorities.includes('medium')}
+                      onCheckedChange={() => handlePriorityToggle('medium')}
+                    >
+                      Medium
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem 
+                      checked={selectedPriorities.includes('low')}
+                      onCheckedChange={() => handlePriorityToggle('low')}
+                    >
+                      Low
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuGroup>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-xs font-normal text-gray-500">Target Audience</DropdownMenuLabel>
+                    {audienceOptions.map(audience => (
+                      <DropdownMenuCheckboxItem 
+                        key={audience}
+                        checked={selectedAudiences.includes(audience)}
+                        onCheckedChange={() => handleAudienceToggle(audience)}
+                      >
+                        {audience}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -322,10 +573,21 @@ const Announcements = () => {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => handleSort('createdAt')} 
+                      onClick={() => handleSort('publishDate')} 
                       className="flex items-center p-0 h-auto font-medium"
                     >
-                      Date
+                      Publish Date
+                      <ArrowUpDown size={14} className="ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleSort('priority')} 
+                      className="flex items-center p-0 h-auto font-medium"
+                    >
+                      Priority
                       <ArrowUpDown size={14} className="ml-1" />
                     </Button>
                   </TableHead>
@@ -340,12 +602,14 @@ const Announcements = () => {
                       <ArrowUpDown size={14} className="ml-1" />
                     </Button>
                   </TableHead>
+                  <TableHead>Target Audience</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       <div className="flex items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
                         <p>Loading announcements...</p>
@@ -365,23 +629,80 @@ const Announcements = () => {
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">{announcement.title}</div>
+                        {announcement.template && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Template: {announcement.template}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="truncate max-w-md">{announcement.content}</div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">{formatDate(announcement.createdAt)}</div>
+                        <div className="text-sm">
+                          {announcement.publishDate ? formatDate(announcement.publishDate) : formatDate(announcement.createdAt)}
+                        </div>
+                        {announcement.expirationDate && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Expires: {formatDate(announcement.expirationDate)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {getPriorityBadge(announcement.priority)}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(announcement.status)}
+                      </TableCell>
+                      <TableCell>
+                        {announcement.targetAudience && announcement.targetAudience.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {announcement.targetAudience.length > 1 ? (
+                              <Badge variant="outline" className="whitespace-nowrap">
+                                {announcement.targetAudience[0]} +{announcement.targetAudience.length - 1}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="whitespace-nowrap">
+                                {announcement.targetAudience[0]}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">None</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => openEditAnnouncementDialog(announcement)}
+                            className="h-8 w-8"
+                          >
+                            <Edit size={16} />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive"
+                            onClick={() => {
+                              setSelectedAnnouncements([announcement.id]);
+                              setBulkDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 size={16} />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      {searchQuery ? (
-                        <>No announcements found matching "{searchQuery}"</>
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      {searchQuery || selectedStatuses.length < 4 || selectedPriorities.length < 3 || selectedAudiences.length > 0 ? (
+                        <>No announcements found matching your filters</>
                       ) : (
                         <>No announcements yet. Create an announcement to get started.</>
                       )}
@@ -466,6 +787,7 @@ const Announcements = () => {
         </CardContent>
       </Card>
       
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -478,6 +800,208 @@ const Announcements = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteAnnouncements} className="bg-destructive text-destructive-foreground">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Create/Edit Announcement Dialog */}
+      <AlertDialog open={announcementDialogOpen} onOpenChange={setAnnouncementDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {editingAnnouncement ? 'Edit Announcement' : 'Create New Announcement'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {editingAnnouncement 
+                ? 'Update the announcement details below.' 
+                : 'Fill in the details to create a new announcement.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="grid grid-cols-1 gap-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="title" className="text-sm font-medium">
+                Title <span className="text-destructive">*</span>
+              </label>
+              <Input
+                id="title"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                maxLength={200}
+                placeholder="Enter announcement title"
+              />
+              <div className="text-xs text-gray-500 flex justify-end">
+                {formTitle.length}/200
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="publishDate" className="text-sm font-medium">
+                  Publication Date <span className="text-destructive">*</span>
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formPublishDate ? (
+                        format(formPublishDate, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formPublishDate}
+                      onSelect={(date) => setFormPublishDate(date)}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="expirationDate" className="text-sm font-medium">
+                  Expiration Date (Optional)
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formExpirationDate ? (
+                        format(formExpirationDate, "PPP")
+                      ) : (
+                        <span>Set an expiration date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formExpirationDate}
+                      onSelect={(date) => setFormExpirationDate(date)}
+                      initialFocus
+                      disabled={(date) => date < new Date()}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="priority" className="text-sm font-medium">
+                  Priority <span className="text-destructive">*</span>
+                </label>
+                <Select 
+                  value={formPriority} 
+                  onValueChange={(value) => setFormPriority(value as AnnouncementPriority)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="template" className="text-sm font-medium">
+                  Template
+                </label>
+                <Select 
+                  value={formTemplate} 
+                  onValueChange={setFormTemplate}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {templateOptions.map(template => (
+                      <SelectItem key={template} value={template}>{template}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Target Audience
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {audienceOptions.map(audience => (
+                  <Button
+                    key={audience}
+                    type="button"
+                    variant={formTargetAudience.includes(audience) ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleTargetAudienceChange(audience)}
+                  >
+                    {audience}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="content" className="text-sm font-medium">
+                Content <span className="text-destructive">*</span>
+              </label>
+              <Textarea
+                id="content"
+                value={formContent}
+                onChange={(e) => setFormContent(e.target.value)}
+                rows={5}
+                placeholder="Enter announcement content"
+                className="resize-y min-h-[100px]"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="status" className="text-sm font-medium">
+                Status
+              </label>
+              <Select 
+                value={formStatus} 
+                onValueChange={(value) => setFormStatus(value as AnnouncementStatus)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSaveAnnouncement}
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingAnnouncement ? 'Update' : 'Create'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
