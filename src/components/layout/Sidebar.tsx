@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, 
@@ -11,12 +11,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
-  BellRing
+  BellRing,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -26,11 +33,21 @@ interface SidebarProps {
 
 const Sidebar = ({ collapsed, setCollapsed, clientCount }: SidebarProps) => {
   const location = useLocation();
+  const [usersDropdownOpen, setUsersDropdownOpen] = useState(false);
 
   const navigationItems = [
     { name: 'Overview', path: '/', icon: Home },
     { name: 'Clients', path: '/clients', icon: Monitor, count: clientCount },
-    { name: 'Users', path: '/users', icon: Users },
+    { 
+      name: 'Users', 
+      path: '#', 
+      icon: Users, 
+      isDropdown: true,
+      children: [
+        { name: 'Users', path: '/users' },
+        { name: 'Roles', path: '/roles' },
+      ]
+    },
     { name: 'Announcements', path: '/announcements', icon: BellRing },
     { name: 'Templates', path: '/templates', icon: Layout },
     { name: 'Logs', path: '/logs', icon: List },
@@ -63,37 +80,107 @@ const Sidebar = ({ collapsed, setCollapsed, clientCount }: SidebarProps) => {
         <TooltipProvider delayDuration={0}>
           <div className="flex-1">
             {navigationItems.map((item) => (
-              <Tooltip key={item.name}>
-                <TooltipTrigger asChild>
-                  <Link
-                    to={item.path}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors my-1.5",
-                      "hover:bg-gray-100",
-                      location.pathname === item.path 
-                        ? "bg-primary/10 text-primary font-medium" 
-                        : "text-gray-700"
+              <React.Fragment key={item.name}>
+                {item.isDropdown ? (
+                  <div className="relative">
+                    {collapsed ? (
+                      <Tooltip key={item.name}>
+                        <TooltipTrigger asChild>
+                          <button
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors my-1.5 w-full",
+                              "hover:bg-gray-100",
+                              (location.pathname === '/users' || location.pathname === '/roles') 
+                                ? "bg-primary/10 text-primary font-medium" 
+                                : "text-gray-700"
+                            )}
+                            onClick={() => setUsersDropdownOpen(!usersDropdownOpen)}
+                          >
+                            <item.icon size={20} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>{item.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <DropdownMenu open={usersDropdownOpen} onOpenChange={setUsersDropdownOpen}>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className={cn(
+                              "flex items-center justify-between gap-3 px-3 py-2.5 rounded-md transition-colors my-1.5 w-full",
+                              "hover:bg-gray-100",
+                              (location.pathname === '/users' || location.pathname === '/roles') 
+                                ? "bg-primary/10 text-primary font-medium" 
+                                : "text-gray-700"
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <item.icon size={20} />
+                              <span className="text-sm">{item.name}</span>
+                            </div>
+                            <ChevronDown size={16} className={usersDropdownOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent 
+                          className="w-[calc(var(--w-sidebar)_-_24px)]" 
+                          style={{ "--w-sidebar": "var(--w-sidebar, 240px)" } as React.CSSProperties}
+                          align="start"
+                          sideOffset={5}
+                        >
+                          {item.children.map((child) => (
+                            <DropdownMenuItem key={child.name} asChild>
+                              <Link
+                                to={child.path}
+                                className={cn(
+                                  "flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-sm",
+                                  location.pathname === child.path 
+                                    ? "bg-primary/10 text-primary font-medium" 
+                                    : "text-gray-700 hover:bg-gray-100"
+                                )}
+                              >
+                                {child.name}
+                              </Link>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
-                  >
-                    <item.icon size={20} />
-                    {!collapsed && (
-                      <>
-                        <span className="text-sm">{item.name}</span>
-                        {item.count !== undefined && (
-                          <Badge variant="outline" className="ml-auto">
-                            {item.count}
-                          </Badge>
+                  </div>
+                ) : (
+                  <Tooltip key={item.name}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to={item.path}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors my-1.5",
+                          "hover:bg-gray-100",
+                          location.pathname === item.path 
+                            ? "bg-primary/10 text-primary font-medium" 
+                            : "text-gray-700"
                         )}
-                      </>
+                      >
+                        <item.icon size={20} />
+                        {!collapsed && (
+                          <>
+                            <span className="text-sm">{item.name}</span>
+                            {item.count !== undefined && (
+                              <Badge variant="outline" className="ml-auto">
+                                {item.count}
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                      </Link>
+                    </TooltipTrigger>
+                    {collapsed && (
+                      <TooltipContent side="right">
+                        <p>{item.name}</p>
+                      </TooltipContent>
                     )}
-                  </Link>
-                </TooltipTrigger>
-                {collapsed && (
-                  <TooltipContent side="right">
-                    <p>{item.name}</p>
-                  </TooltipContent>
+                  </Tooltip>
                 )}
-              </Tooltip>
+              </React.Fragment>
             ))}
           </div>
 

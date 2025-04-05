@@ -16,6 +16,7 @@ import { ClientProvider } from "./contexts/ClientContext";
 import { useState, useEffect } from "react";
 import Users from "./pages/Users";
 import Announcements from "./pages/Announcements";
+import Roles from "./pages/Roles";
 
 const App = () => {
   // Move queryClient instantiation inside the component
@@ -37,6 +38,7 @@ const App = () => {
               <Route path="/" element={<MainLayout><Overview /></MainLayout>} />
               <Route path="/clients" element={<MainLayout><Clients /></MainLayout>} />
               <Route path="/users" element={<MainLayout><Users /></MainLayout>} />
+              <Route path="/roles" element={<MainLayout><Roles /></MainLayout>} />
               <Route path="/announcements" element={<MainLayout><Announcements /></MainLayout>} />
               <Route path="/templates" element={<MainLayout><Templates /></MainLayout>} />
               <Route path="/logs" element={<MainLayout><Logs /></MainLayout>} />
