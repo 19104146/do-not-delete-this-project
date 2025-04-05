@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo } from 'react';
 import { 
   PlusCircle, Filter, Search, Trash2, BellRing, CheckSquare, 
   SquareSlash, ArrowUpDown, SlidersHorizontal, Loader2, 
-  Calendar, Clock, Users as UsersIcon, AlertTriangle, Edit, Calendar as CalendarIcon
+  Clock, Users as UsersIcon, AlertTriangle, Edit, CalendarIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -859,7 +858,7 @@ const Announcements = () => {
                     <Calendar
                       mode="single"
                       selected={formPublishDate}
-                      onSelect={(date) => setFormPublishDate(date)}
+                      onSelect={setFormPublishDate}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
@@ -889,7 +888,7 @@ const Announcements = () => {
                     <Calendar
                       mode="single"
                       selected={formExpirationDate}
-                      onSelect={(date) => setFormExpirationDate(date)}
+                      onSelect={setFormExpirationDate}
                       initialFocus
                       disabled={(date) => date < new Date()}
                       className={cn("p-3 pointer-events-auto")}
