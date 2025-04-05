@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  ShieldCheck,  // Add this for Roles icon
   BellRing,
   ChevronDown
 } from 'lucide-react';
@@ -39,13 +40,13 @@ const Sidebar = ({ collapsed, setCollapsed, clientCount }: SidebarProps) => {
     { name: 'Overview', path: '/', icon: Home },
     { name: 'Clients', path: '/clients', icon: Monitor, count: clientCount },
     { 
-      name: 'Users', 
+      name: 'User Management', 
       path: '#', 
       icon: Users, 
       isDropdown: true,
       children: [
-        { name: 'Users', path: '/users' },
-        { name: 'Roles', path: '/roles' },
+        { name: 'User List', path: '/users', icon: Users },
+        { name: 'Roles', path: '/roles', icon: ShieldCheck },
       ]
     },
     { name: 'Announcements', path: '/announcements', icon: BellRing },
